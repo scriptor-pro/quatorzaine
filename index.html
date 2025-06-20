@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Planning des 14 prochains jours</title>
+  <title>Planning 14 jours</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/date_fns.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sakura.css/css/sakura.css" type="text/css">
   <script src="app.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sakura.css/css/sakura.css" type="text/css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -16,15 +15,10 @@
       margin: 0 auto;
       padding: 20px;
     }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
     .grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 15px;
-      margin-top: 20px;
     }
     .day {
       border: 1px solid #ddd;
@@ -33,51 +27,30 @@
       min-height: 200px;
       background: #f9f9f9;
     }
-    .day h3 {
-      margin-top: 0;
-      color: #2c3e50;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 8px;
+    .weekend {
+      grid-column: span 1; /* Occupe une seule colonne */
+      background: #f0f7ff;
     }
-    .task {
-      background: #fff;
-      padding: 8px;
-      margin: 8px 0;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      cursor: move;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    @media (max-width: 768px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
+    /* ... (conservez le reste de votre CSS existant) ... */
   </style>
 </head>
 <body>
   <div id="app">
-    <h1>Planning des 14 prochains jours</h1>
     <div class="grid">
-      <div v-for="day in days" :key="day.date" class="day">
-        <h3>{{ day.name }} {{ day.date }}</h3>
-        <div class="task-list" :data-date="day.date">
-          <div v-for="task in day.tasks" class="task" draggable="true">
-            {{ task }}
-          </div>
+      <template v-for="day in days" :key="day.date">
+        <!-- Cas spécial pour le weekend -->
+        <div v-if="isWeekend(day.name)" 
+             class="day weekend" 
+             :data-date="day.date">
+          <h3>Week-end {{ day.date }}</h3>
+          <!-- ... (contenu identique) ... -->
         </div>
-        <input 
-          v-model="newTasks[day.date]" 
-          @keyup.enter="addTask(day.date)" 
-          placeholder="+ Ajouter une tâche"
-        >
-      </div>
+        <!-- Jours normaux -->
+        <div v-else class="day" :data-date="day.date">
+          <h3>{{ day.name }} {{ day.date }}</h3>
+          <!-- ... (contenu identique) ... -->
+        </div>
+      </template>
     </div>
   </div>
 </body>
