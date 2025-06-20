@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planning des 14 prochains jours</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/date_fns.min.js"></script>
+  <script src="app.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .day {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      min-height: 200px;
+      background: #f9f9f9;
+    }
+    .day h3 {
+      margin-top: 0;
+      color: #2c3e50;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+    }
+    .task {
+      background: #fff;
+      padding: 8px;
+      margin: 8px 0;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: move;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Planning des 14 prochains jours</h1>
+    <div class="grid">
+      <div v-for="day in days" :key="day.date" class="day">
+        <h3>{{ day.name }} {{ day.date }}</h3>
+        <div class="task-list" :data-date="day.date">
+          <div v-for="task in day.tasks" class="task" draggable="true">
+            {{ task }}
+          </div>
+        </div>
+        <input 
+          v-model="newTasks[day.date]" 
+          @keyup.enter="addTask(day.date)" 
+          placeholder="+ Ajouter une tâche"
+        >
+      </div>
+    </div>
+  </div>
+</body>
+</html>
