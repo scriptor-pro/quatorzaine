@@ -3,88 +3,168 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Planning 14 jours</title>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="app.js" defer></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sakura.css/css/sakura.css" type="text/css">
+  <title>Agenda des Tâches</title>
   <style>
+    /* style.css */
     body {
-      font-family: Inter, Helvetica, Tacoma, sans-serif;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 5vw;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f4;
     }
-    .grid {
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      width: 90%;
+      max-width: 1000px;
+    }
+
+    #upper-half, #lower-half {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
-      gap: 5vh;
+      gap: 10px;
     }
+
     .day {
+      padding: 20px;
+      background-color: #fff;
       border: 1px solid #ddd;
       border-radius: 8px;
-      padding: 5vh;
-      min-height: 200px;
-      background: #f9f9f9;
-    }
-
-  h1 {
       text-align: center;
-      color: #191919;
-      background-color: yellow;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    .day h3 {
-      margin-top: 0;
-      color: #2c3e50;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 8px;
+
+    .day.completed {
+      background-color: #28a745; /* Vert */
+      color: #ddd;
+      text-decoration: line-through;
     }
-    .task {
-      background: #fff;
-      padding: 8px;
-      margin: 8px 0;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      cursor: move;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
+
+    button {
       margin-top: 10px;
-      border: 1px solid #ddd;
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
       border-radius: 4px;
-    }
-    @media (max-width: 768px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    .weekend {
-      grid-column: span 1; /* Occupe une seule colonne */
-      background: #f0f7ff;
+      cursor: pointer;
     }
 
+    button:hover {
+      background-color: #0056b3;
+    }
 
-    /* ... (conservez le reste de votre CSS existant) ... */
+    .task {
+      margin-top: 10px;
+      padding: 5px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .task.completed {
+      background-color: #d4edda;
+      color: #6c757d;
+      text-decoration: line-through;
+    }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="grid">
-      <template v-for="day in days" :key="day.date">
-        <!-- Cas spécial pour le weekend -->
-        <div v-if="isWeekend(day.name)" 
-             class="day weekend" 
-             :data-date="day.date">
-          <h3>Week-end {{ day.date }}</h3>
-          <!-- ... (contenu identique) ... -->
-        </div>
-        <!-- Jours normaux -->
-        <div v-else class="day" :data-date="day.date">
-          <h3>{{ day.name }} {{ day.date }}</h3>
-          <!-- ... (contenu identique) ... -->
-        </div>
-      </template>
+  <div id="container">
+    <div id="upper-half">
+      <div class="day" id="monday"></div>
+      <div class="day" id="tuesday"></div>
+      <div class="day" id="wednesday"></div>
+      <div class="day" id="thursday"></div>
+      <div class="day" id="friday"></div>
+      <div class="day" id="weekend"></div>
+    </div>
+    <div id="lower-half">
+      <div class="day" id="monday2"></div>
+      <div class="day" id="tuesday2"></div>
+      <div class="day" id="wednesday2"></div>
+      <div class="day" id="thursday2"></div>
+      <div class="day" id="friday2"></div>
+      <div class="day" id="weekend2"></div>
     </div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <script>
+    // app.js
+    document.addEventListener("DOMContentLoaded", function() {
+      const today = new Date();
+      const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi/Dimanche"];
+      const taskList = {};
+
+      // Fonction pour obtenir les dates des 14 jours à partir d'aujourd'hui
+      function getDates() {
+        let dates = [];
+        for (let i = 0; i < 14; i++) {
+          let date = new Date(today);
+          date.setDate(today.getDate() + i);
+          dates.push(date);
+        }
+        return dates;
+      }
+
+      // Remplir la page avec les jours et dates
+      function populateDays() {
+        const dates = getDates();
+        let dayElements = document.querySelectorAll('.day');
+        dayElements.forEach((dayElem, index) => {
+          let date = dates[index];
+          dayElem.innerHTML = `${daysOfWeek[index % 6]} ${date.getDate()}`;
+          taskList[date.toISOString()] = [];
+          dayElem.addEventListener('click', function() {
+            promptAddTask(date);
+          });
+        });
+      }
+
+      // Ajouter une tâche via un prompt
+      function promptAddTask(date) {
+        const taskText = prompt("Entrez une nouvelle tâche pour " + date.toDateString());
+        if (taskText) {
+          const taskDiv = document.createElement("div");
+          taskDiv.textContent = taskText;
+          taskDiv.classList.add("task");
+          taskDiv.addEventListener("click", function() {
+            markTaskCompleted(taskDiv, date);
+          });
+          const dayElement = document.querySelector(`#${daysOfWeek[date.getDay()]}`);
+          dayElement.appendChild(taskDiv);
+          taskList[date.toISOString()].push(taskText);
+        }
+      }
+
+      // Marquer une tâche comme terminée
+      function markTaskCompleted(taskElement, date) {
+        taskElement.classList.add("completed");
+        // Lancer l'animation des confettis
+        launchConfetti();
+      }
+
+      // Fonction de confettis (utilisation de Canvas Confetti)
+      function launchConfetti() {
+        const canvas = document.createElement("canvas");
+        document.body.appendChild(canvas);
+        const confetti = window.confetti.create(canvas, {
+          resize: true,
+          useWorker: true
+        });
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        setTimeout(() => document.body.removeChild(canvas), 1000);
+      }
+
+      // Initialisation
+      populateDays();
+    });
+  </script>
 </body>
 </html>
