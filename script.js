@@ -12,7 +12,6 @@ const DAY_NAMES = [
 
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
-const SUMMARY_VISIBLE_KEY = "quatorzaine_summary_visible";
 
 let schedule = [];
 let pocketbase = null;
@@ -22,12 +21,6 @@ let cloudStatusEl;
 let cloudPullBtnEl;
 let cloudPushBtnEl;
 let plannerLogoutBtnEl;
-let summaryBarEl;
-let summaryItemsEl;
-let summaryToggleBtnEl;
-let summaryOpenTodayEl;
-let summaryAppointmentsTodayEl;
-let summaryCarriedTodayEl;
 
 function dayKey(date) {
   const year = date.getFullYear();
@@ -149,7 +142,7 @@ function normalizeSchedule(raw) {
         (candidate) => candidate.id === task.id,
       );
       if (!alreadyExists) {
-        targetDay.tasks.unshift({ ...task, done: false, carried: true });
+        targetDay.tasks.unshift({ ...task, done: false });
       }
     });
   });
@@ -739,78 +732,6 @@ function render() {
   schedule.forEach((day) => {
     grid.append(createDayCard(day));
   });
-  updateSummaryBar();
-}
-
-function getTodayDay() {
-  return schedule.find((day) => day.dayOffset === 0) || schedule[0] || null;
-}
-
-function updateSummaryBar() {
-  if (
-    !summaryOpenTodayEl ||
-    !summaryAppointmentsTodayEl ||
-    !summaryCarriedTodayEl
-  ) {
-    return;
-  }
-
-  const todayDay = getTodayDay();
-  if (!todayDay) {
-    summaryOpenTodayEl.textContent = "0";
-    summaryAppointmentsTodayEl.textContent = "0";
-    summaryCarriedTodayEl.textContent = "0";
-    return;
-  }
-
-  const openToday = todayDay.tasks.filter((task) => !task.done).length;
-  const appointmentsToday = todayDay.appointments.length;
-  const carriedToday = todayDay.tasks.filter(
-    (task) => !task.done && task.carried === true,
-  ).length;
-
-  summaryOpenTodayEl.textContent = String(openToday);
-  summaryAppointmentsTodayEl.textContent = String(appointmentsToday);
-  summaryCarriedTodayEl.textContent = String(carriedToday);
-}
-
-function setSummaryVisibility(isVisible) {
-  if (!summaryBarEl || !summaryItemsEl || !summaryToggleBtnEl) {
-    return;
-  }
-
-  summaryBarEl.classList.toggle("collapsed", !isVisible);
-  summaryItemsEl.hidden = !isVisible;
-  summaryToggleBtnEl.textContent = isVisible ? "Masquer" : "Afficher";
-  summaryToggleBtnEl.setAttribute(
-    "aria-label",
-    isVisible ? "Masquer le resume rapide" : "Afficher le resume rapide",
-  );
-  localStorage.setItem(SUMMARY_VISIBLE_KEY, isVisible ? "1" : "0");
-}
-
-function bindSummaryControls() {
-  summaryBarEl = document.querySelector(".summary-bar");
-  summaryItemsEl = document.getElementById("summary-items");
-  summaryToggleBtnEl = document.getElementById("summary-toggle");
-  summaryOpenTodayEl = document.getElementById("summary-open-today");
-  summaryAppointmentsTodayEl = document.getElementById(
-    "summary-appointments-today",
-  );
-  summaryCarriedTodayEl = document.getElementById("summary-carried-today");
-
-  if (!summaryBarEl || !summaryToggleBtnEl) {
-    return;
-  }
-
-  const stored = localStorage.getItem(SUMMARY_VISIBLE_KEY);
-  const isVisible = stored !== "0";
-  setSummaryVisibility(isVisible);
-
-  summaryToggleBtnEl.addEventListener("click", () => {
-    const currentlyVisible = !summaryBarEl.classList.contains("collapsed");
-    setSummaryVisibility(!currentlyVisible);
-  });
 }
 
 function redirectToLogin() {
@@ -834,7 +755,6 @@ function bindPlannerControls() {
   cloudPullBtnEl = document.getElementById("cloud-pull");
   cloudPushBtnEl = document.getElementById("cloud-push");
   plannerLogoutBtnEl = document.getElementById("planner-logout");
-  bindSummaryControls();
 
   cloudPullBtnEl.addEventListener("click", () => pullFromCloud(false));
   cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));

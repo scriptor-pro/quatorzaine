@@ -47,56 +47,6 @@ h1 {
   color: var(--muted);
 }
 
-.summary-bar {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--panel);
-  box-shadow: 0 8px 20px rgba(38, 29, 18, 0.06);
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.summary-items {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  width: 100%;
-}
-
-.summary-item {
-  margin: 0;
-  border: 1px solid color-mix(in srgb, var(--line) 70%, #ffffff);
-  border-radius: 10px;
-  padding: 8px 10px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.summary-label {
-  font-size: 0.76rem;
-  color: var(--muted);
-  letter-spacing: 0.02em;
-}
-
-.summary-item strong {
-  font-size: 1.05rem;
-  color: #333;
-}
-
-.summary-toggle {
-  white-space: nowrap;
-}
-
-.summary-bar.collapsed .summary-items {
-  display: none;
-}
-
 .planner-toolbar {
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -459,15 +409,6 @@ button.delete {
 @media (max-width: 720px) {
   body {
     padding: 14px;
-  }
-
-  .summary-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .summary-items {
-    grid-template-columns: 1fr;
   }
 
   .appointment-form {
