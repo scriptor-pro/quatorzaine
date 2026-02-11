@@ -95,15 +95,38 @@ code {
   padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+
+.day-chip {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--day-color) 45%, #ffffff);
+  background: color-mix(in srgb, var(--day-color) 16%, #ffffff);
+  color: color-mix(in srgb, var(--day-color) 65%, #222222);
+}
+
+.day-chip.today {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--day-color) 20%, transparent);
+}
+
+.day-chip.tomorrow,
+.day-chip.later {
+  opacity: 0.9;
 }
 
 .day-title {
   margin: 0;
   font-size: 1rem;
   font-family: "Public Sans", "Segoe UI", sans-serif;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--day-color) 60%, #1f1f1f);
+  font-weight: 600;
+  color: #444;
   background: color-mix(in srgb, var(--day-color) 12%, #ffffff);
   border: 1px solid color-mix(in srgb, var(--day-color) 30%, #ffffff);
   border-radius: 8px;
@@ -140,7 +163,11 @@ code {
 
 .section {
   border-top: 1px solid var(--line);
-  padding-top: 10px;
+  padding-top: 12px;
+}
+
+.section + .section {
+  margin-top: 4px;
 }
 
 .section-title {
@@ -209,6 +236,7 @@ ul {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .task-text,
@@ -250,22 +278,51 @@ ul {
 
 .appointment-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
 }
 
-.appointment-form input[name="appointmentTime"] {
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.appointment-form .field-group:nth-of-type(1) {
   grid-column: 1;
 }
 
-.appointment-form input[name="appointmentDuration"] {
+.appointment-form .field-group:nth-of-type(2) {
   grid-column: 2;
 }
 
-.appointment-form input[name="appointmentText"] {
+.appointment-text-group {
   grid-column: 1;
 }
 
 .appointment-form button {
   grid-column: 2;
+}
+
+.empty-marker {
+  height: 18px;
+  position: relative;
+}
+
+.empty-marker::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--line) 80%, #ffffff);
+  margin-top: 8px;
 }
 
 input,
@@ -314,10 +371,10 @@ button.delete {
 }
 
 .task-move {
-  background: #f4f7ff;
-  color: #143a97;
+  background: #eef3ff;
+  color: #1a3f9c;
   border-color: #c7d5ff;
-  min-width: 44px;
+  min-width: 84px;
 }
 
 .empty {
@@ -344,6 +401,13 @@ button.delete {
 
   .appointment-form {
     grid-template-columns: 1fr;
+  }
+
+  .appointment-form .field-group:nth-of-type(1),
+  .appointment-form .field-group:nth-of-type(2),
+  .appointment-text-group,
+  .appointment-form button {
+    grid-column: 1;
   }
 
   .planner-toolbar {

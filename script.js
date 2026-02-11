@@ -75,6 +75,7 @@ function buildBaseSchedule() {
       key: dayKey(date),
       dayName: DAY_NAMES[weekdayIndex],
       weekdayIndex,
+      dayOffset: i,
       dateLabel: String(date.getDate()),
       tasks: [],
       appointments: [],
@@ -460,7 +461,7 @@ function createTaskElement(dayKeyValue, task) {
   const moveBtn = document.createElement("button");
   moveBtn.className = "task-move";
   moveBtn.type = "button";
-  moveBtn.textContent = "↕";
+  moveBtn.textContent = "Deplacer";
   moveBtn.setAttribute("aria-label", "Deplacer la tache vers un autre jour");
   moveBtn.addEventListener("click", () => {
     const targetDayKey = promptMoveTargetDay(dayKeyValue);
@@ -560,6 +561,19 @@ function createDayCard(day) {
   title.className = "day-title";
   title.textContent = `${day.dayName} ${day.dateLabel}`;
 
+  const dayChip = document.createElement("p");
+  dayChip.className = "day-chip";
+  if (day.dayOffset === 0) {
+    dayChip.textContent = "Aujourd'hui";
+    dayChip.classList.add("today");
+  } else if (day.dayOffset === 1) {
+    dayChip.textContent = "Demain";
+    dayChip.classList.add("tomorrow");
+  } else {
+    dayChip.textContent = `J+${day.dayOffset}`;
+    dayChip.classList.add("later");
+  }
+
   const tasksSection = document.createElement("div");
   tasksSection.className = "section";
 
@@ -603,6 +617,11 @@ function createDayCard(day) {
     day.tasks.forEach((task) =>
       taskList.append(createTaskElement(day.key, task)),
     );
+  } else {
+    const empty = document.createElement("li");
+    empty.className = "empty-marker";
+    empty.innerHTML = '<span class="visually-hidden">Aucune tache</span>';
+    taskList.append(empty);
   }
 
   const taskForm = document.createElement("form");
@@ -638,6 +657,11 @@ function createDayCard(day) {
       .forEach((appointment) => {
         appointmentList.append(createAppointmentElement(day.key, appointment));
       });
+  } else {
+    const empty = document.createElement("li");
+    empty.className = "empty-marker";
+    empty.innerHTML = '<span class="visually-hidden">Aucun rendez-vous</span>';
+    appointmentList.append(empty);
   }
 
   const appointmentForm = document.createElement("form");
@@ -646,12 +670,18 @@ function createDayCard(day) {
   const durationInputId = `appointment-duration-${day.key}`;
   const textInputId = `appointment-text-${day.key}`;
   appointmentForm.innerHTML = `
-    <label class="visually-hidden" for="${timeInputId}">Heure du rendez-vous pour ${day.dayName} ${day.dateLabel}</label>
-    <input id="${timeInputId}" name="appointmentTime" type="time" required>
-    <label class="visually-hidden" for="${durationInputId}">Duree du rendez-vous en minutes</label>
-    <input id="${durationInputId}" name="appointmentDuration" type="number" min="5" step="5" value="60" placeholder="Duree (min)" required>
-    <label class="visually-hidden" for="${textInputId}">Description du rendez-vous</label>
-    <input id="${textInputId}" name="appointmentText" type="text" placeholder="Rendez-vous" required>
+    <div class="field-group">
+      <label class="field-label" for="${timeInputId}">Heure</label>
+      <input id="${timeInputId}" name="appointmentTime" type="time" required>
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="${durationInputId}">Duree (min)</label>
+      <input id="${durationInputId}" name="appointmentDuration" type="number" min="5" step="5" value="60" required>
+    </div>
+    <div class="field-group appointment-text-group">
+      <label class="field-label" for="${textInputId}">Description</label>
+      <input id="${textInputId}" name="appointmentText" type="text" placeholder="Rendez-vous" required>
+    </div>
     <button type="submit">Bloquer</button>
   `;
   appointmentForm.addEventListener("submit", (event) => {
@@ -680,7 +710,7 @@ function createDayCard(day) {
 
   appointmentsSection.append(appointmentList, appointmentForm);
 
-  card.append(title, tasksSection, appointmentsSection);
+  card.append(dayChip, title, tasksSection, appointmentsSection);
   return card;
 }
 
