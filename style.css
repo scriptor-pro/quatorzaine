@@ -254,6 +254,14 @@ ul {
   margin-top: 8px;
 }
 
+.task-form {
+  grid-template-columns: 1fr;
+}
+
+.task-form button {
+  width: 100%;
+}
+
 .appointment-form {
   grid-template-columns: 80px 120px 1fr auto;
 }

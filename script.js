@@ -605,7 +605,7 @@ function createDayCard(day) {
   }
 
   const taskForm = document.createElement("form");
-  taskForm.className = "inline-form";
+  taskForm.className = "inline-form task-form";
   const taskInputId = `task-input-${day.key}`;
   taskForm.innerHTML = `
     <label class="visually-hidden" for="${taskInputId}">Nouvelle tache pour ${day.dayName} ${day.dateLabel}</label>
