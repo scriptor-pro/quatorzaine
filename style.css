@@ -200,6 +200,10 @@ ul {
 }
 
 .task-item {
+  flex-direction: column;
+}
+
+.task-item {
   background: var(--task-bg);
   cursor: grab;
 }
@@ -221,6 +225,11 @@ ul {
   min-width: 0;
 }
 
+.task-main {
+  width: 100%;
+  align-items: flex-start;
+}
+
 .appointment-main {
   flex-direction: column;
   align-items: flex-start;
@@ -237,11 +246,14 @@ ul {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .task-text,
 .appointment-text {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .appointment-time {
