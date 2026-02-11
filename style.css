@@ -9,6 +9,13 @@
   --danger: #b2452f;
   --task-bg: #f0f7ff;
   --appointment-bg: #fff2dd;
+  --dow-0: #c95478;
+  --dow-1: #4e6fb8;
+  --dow-2: #2f8e8f;
+  --dow-3: #4d9a61;
+  --dow-4: #b4852f;
+  --dow-5: #c06a4b;
+  --dow-6: #7b67b6;
 }
 
 * {
@@ -77,7 +84,9 @@ code {
 }
 
 .day-card {
+  --day-color: var(--line);
   border: 1px solid var(--line);
+  border-top: 5px solid var(--day-color);
   border-radius: 14px;
   background: var(--panel);
   box-shadow: 0 10px 24px rgba(38, 29, 18, 0.08);
@@ -90,10 +99,39 @@ code {
 .day-title {
   margin: 0;
   font-size: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
+  color: color-mix(in srgb, var(--day-color) 60%, #1f1f1f);
+  background: color-mix(in srgb, var(--day-color) 12%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--day-color) 30%, #ffffff);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+.day-card[data-weekday="0"] {
+  --day-color: var(--dow-0);
+}
+
+.day-card[data-weekday="1"] {
+  --day-color: var(--dow-1);
+}
+
+.day-card[data-weekday="2"] {
+  --day-color: var(--dow-2);
+}
+
+.day-card[data-weekday="3"] {
+  --day-color: var(--dow-3);
+}
+
+.day-card[data-weekday="4"] {
+  --day-color: var(--dow-4);
+}
+
+.day-card[data-weekday="5"] {
+  --day-color: var(--dow-5);
+}
+
+.day-card[data-weekday="6"] {
+  --day-color: var(--dow-6);
 }
 
 .section {

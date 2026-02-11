@@ -70,9 +70,11 @@ function buildBaseSchedule() {
   for (let i = 0; i < DAY_COUNT; i += 1) {
     const date = new Date(start);
     date.setDate(start.getDate() + i);
+    const weekdayIndex = date.getDay();
     days.push({
       key: dayKey(date),
-      dayName: DAY_NAMES[date.getDay()],
+      dayName: DAY_NAMES[weekdayIndex],
+      weekdayIndex,
       dateLabel: String(date.getDate()),
       tasks: [],
       appointments: [],
@@ -552,6 +554,7 @@ function createDayCard(day) {
   const card = document.createElement("section");
   card.className = "day-card";
   card.dataset.dayKey = day.key;
+  card.dataset.weekday = String(day.weekdayIndex);
 
   const title = document.createElement("h2");
   title.className = "day-title";
