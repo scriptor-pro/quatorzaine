@@ -207,7 +207,23 @@ ul {
 }
 
 .appointment-form {
-  grid-template-columns: 80px 120px 1fr auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.appointment-form input[name="appointmentTime"] {
+  grid-column: 1;
+}
+
+.appointment-form input[name="appointmentDuration"] {
+  grid-column: 2;
+}
+
+.appointment-form input[name="appointmentText"] {
+  grid-column: 1;
+}
+
+.appointment-form button {
+  grid-column: 2;
 }
 
 input,
