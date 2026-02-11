@@ -490,8 +490,20 @@ function createTaskElement(dayKeyValue, task) {
   deleteBtn.className = "delete";
   deleteBtn.type = "button";
   deleteBtn.textContent = "x";
-  deleteBtn.setAttribute("aria-label", "Supprimer la tache");
+  deleteBtn.disabled = !task.done;
+  deleteBtn.setAttribute(
+    "aria-label",
+    task.done
+      ? "Supprimer la tache"
+      : "Terminez la tache pour activer la suppression",
+  );
+  deleteBtn.title = task.done
+    ? "Supprimer la tache"
+    : "Terminez la tache pour pouvoir la supprimer";
   deleteBtn.addEventListener("click", () => {
+    if (!task.done) {
+      return;
+    }
     const day = schedule.find((d) => d.key === dayKeyValue);
     day.tasks = day.tasks.filter((t) => t.id !== task.id);
     saveSchedule();
@@ -670,17 +682,17 @@ function createDayCard(day) {
   const durationInputId = `appointment-duration-${day.key}`;
   const textInputId = `appointment-text-${day.key}`;
   appointmentForm.innerHTML = `
-    <div class="field-group">
+    <div class="field-group appointment-description-group">
+      <label class="field-label" for="${textInputId}">Description</label>
+      <input id="${textInputId}" name="appointmentText" type="text" placeholder="Rendez-vous" required>
+    </div>
+    <div class="field-group appointment-time-group">
       <label class="field-label" for="${timeInputId}">Heure</label>
       <input id="${timeInputId}" name="appointmentTime" type="time" required>
     </div>
-    <div class="field-group">
+    <div class="field-group appointment-duration-group">
       <label class="field-label" for="${durationInputId}">Duree (min)</label>
       <input id="${durationInputId}" name="appointmentDuration" type="number" min="5" step="5" value="60" required>
-    </div>
-    <div class="field-group appointment-text-group">
-      <label class="field-label" for="${textInputId}">Description</label>
-      <input id="${textInputId}" name="appointmentText" type="text" placeholder="Rendez-vous" required>
     </div>
     <button type="submit">Bloquer</button>
   `;

@@ -306,15 +306,15 @@ ul {
   text-transform: uppercase;
 }
 
-.appointment-form .field-group:nth-of-type(1) {
+.appointment-description-group {
   grid-column: 1;
 }
 
-.appointment-form .field-group:nth-of-type(2) {
+.appointment-time-group {
   grid-column: 2;
 }
 
-.appointment-text-group {
+.appointment-duration-group {
   grid-column: 1;
 }
 
@@ -415,9 +415,7 @@ button.delete {
     grid-template-columns: 1fr;
   }
 
-  .appointment-form .field-group:nth-of-type(1),
-  .appointment-form .field-group:nth-of-type(2),
-  .appointment-text-group,
+  .appointment-form .field-group,
   .appointment-form button {
     grid-column: 1;
   }
