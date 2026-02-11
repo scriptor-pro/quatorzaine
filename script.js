@@ -29,6 +29,39 @@ function dayKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+function dayKeyToDate(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const parts = value.split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function shiftDateByDays(date, days) {
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + days);
+  shifted.setHours(0, 0, 0, 0);
+  return shifted;
+}
+
 function buildBaseSchedule() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -40,10 +73,7 @@ function buildBaseSchedule() {
     days.push({
       key: dayKey(date),
       dayName: DAY_NAMES[date.getDay()],
-      dateLabel: date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-      }),
+      dateLabel: String(date.getDate()),
       tasks: [],
       appointments: [],
     });
@@ -60,7 +90,7 @@ function normalizeSchedule(raw) {
 
   const byKey = new Map(raw.map((day) => [day.key, day]));
 
-  return base.map((day) => {
+  const normalized = base.map((day) => {
     const previous = byKey.get(day.key);
     if (!previous) {
       return day;
@@ -74,6 +104,47 @@ function normalizeSchedule(raw) {
         : [],
     };
   });
+
+  const normalizedByKey = new Map(normalized.map((day) => [day.key, day]));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  raw.forEach((savedDay) => {
+    if (!savedDay || !Array.isArray(savedDay.tasks)) {
+      return;
+    }
+
+    const sourceDate = dayKeyToDate(savedDay.key);
+    if (!sourceDate || sourceDate >= today) {
+      return;
+    }
+
+    savedDay.tasks.forEach((task) => {
+      if (!task || task.done) {
+        return;
+      }
+
+      let targetDate = shiftDateByDays(sourceDate, 1);
+      while (targetDate < today) {
+        targetDate = shiftDateByDays(targetDate, 1);
+      }
+
+      const targetKey = dayKey(targetDate);
+      const targetDay = normalizedByKey.get(targetKey);
+      if (!targetDay) {
+        return;
+      }
+
+      const alreadyExists = targetDay.tasks.some(
+        (candidate) => candidate.id === task.id,
+      );
+      if (!alreadyExists) {
+        targetDay.tasks.unshift({ ...task, done: false });
+      }
+    });
+  });
+
+  return normalized;
 }
 
 function parseCloudScheduleValue(rawValue) {
@@ -480,7 +551,7 @@ function createDayCard(day) {
 
   const title = document.createElement("h2");
   title.className = "day-title";
-  title.innerHTML = `${day.dayName} <span class="day-date">${day.dateLabel}</span>`;
+  title.textContent = `${day.dayName} ${day.dateLabel}`;
 
   const tasksSection = document.createElement("div");
   tasksSection.className = "section";
