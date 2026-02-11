@@ -10,7 +10,22 @@ const DAY_NAMES = [
   "Samedi",
 ];
 
+const PB_URL_KEY = "quatorzaine_pb_url";
+const PB_EMAIL_KEY = "quatorzaine_pb_email";
+const PB_COLLECTION = "planner_snapshots";
+
 let schedule = [];
+let pocketbase = null;
+let cloudSaveTimer = null;
+
+let cloudStatusEl;
+let cloudAuthFormEl;
+let cloudUrlEl;
+let cloudEmailEl;
+let cloudPasswordEl;
+let cloudPullBtnEl;
+let cloudPushBtnEl;
+let cloudLogoutBtnEl;
 
 function dayKey(date) {
   const year = date.getFullYear();
@@ -42,36 +57,46 @@ function buildBaseSchedule() {
   return days;
 }
 
-function loadSchedule() {
+function normalizeSchedule(raw) {
   const base = buildBaseSchedule();
-  const savedRaw = localStorage.getItem(STORAGE_KEY);
-  if (!savedRaw) {
+  if (!Array.isArray(raw)) {
     return base;
   }
 
+  const byKey = new Map(raw.map((day) => [day.key, day]));
+
+  return base.map((day) => {
+    const previous = byKey.get(day.key);
+    if (!previous) {
+      return day;
+    }
+
+    return {
+      ...day,
+      tasks: Array.isArray(previous.tasks) ? previous.tasks : [],
+      appointments: Array.isArray(previous.appointments)
+        ? previous.appointments
+        : [],
+    };
+  });
+}
+
+function loadSchedule() {
+  const savedRaw = localStorage.getItem(STORAGE_KEY);
+  if (!savedRaw) {
+    return buildBaseSchedule();
+  }
+
   try {
-    const saved = JSON.parse(savedRaw);
-    const byKey = new Map(saved.map((day) => [day.key, day]));
-    return base.map((day) => {
-      const previous = byKey.get(day.key);
-      if (!previous) {
-        return day;
-      }
-      return {
-        ...day,
-        tasks: Array.isArray(previous.tasks) ? previous.tasks : [],
-        appointments: Array.isArray(previous.appointments)
-          ? previous.appointments
-          : [],
-      };
-    });
+    return normalizeSchedule(JSON.parse(savedRaw));
   } catch (_error) {
-    return base;
+    return buildBaseSchedule();
   }
 }
 
 function saveSchedule() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+  queueCloudSave();
 }
 
 function makeId() {
@@ -87,6 +112,136 @@ function launchConfetti() {
     spread: 65,
     origin: { y: 0.7 },
   });
+}
+
+function setCloudStatus(message, isError = false) {
+  if (!cloudStatusEl) {
+    return;
+  }
+  cloudStatusEl.textContent = message;
+  cloudStatusEl.style.color = isError ? "#b2452f" : "#6f6255";
+}
+
+function isCloudConnected() {
+  return !!(pocketbase && pocketbase.authStore && pocketbase.authStore.isValid);
+}
+
+function updateCloudButtons() {
+  const connected = isCloudConnected();
+  cloudPullBtnEl.disabled = !connected;
+  cloudPushBtnEl.disabled = !connected;
+  cloudLogoutBtnEl.disabled = !connected;
+}
+
+function initPocketBase(url) {
+  if (!window.PocketBase) {
+    throw new Error("SDK PocketBase introuvable");
+  }
+
+  if (!url) {
+    throw new Error("URL PocketBase manquante");
+  }
+
+  if (!pocketbase || pocketbase.baseURL !== url) {
+    pocketbase = new window.PocketBase(url);
+    pocketbase.autoCancellation(false);
+  }
+}
+
+async function getSnapshotRecord(createIfMissing = false) {
+  if (!isCloudConnected()) {
+    throw new Error("Non connecte a PocketBase");
+  }
+
+  const userId = pocketbase.authStore.model.id;
+  const list = await pocketbase.collection(PB_COLLECTION).getList(1, 1, {
+    filter: `owner = "${userId}"`,
+    sort: "-updated",
+  });
+
+  if (list.items.length > 0) {
+    return list.items[0];
+  }
+
+  if (!createIfMissing) {
+    return null;
+  }
+
+  return pocketbase.collection(PB_COLLECTION).create({
+    owner: userId,
+    schedule: JSON.stringify(schedule),
+  });
+}
+
+async function pullFromCloud(silent = false) {
+  if (!isCloudConnected()) {
+    setCloudStatus("Connectez-vous d'abord a PocketBase.", true);
+    return;
+  }
+
+  try {
+    const record = await getSnapshotRecord(false);
+    if (!record) {
+      if (!silent) {
+        setCloudStatus("Aucun snapshot cloud trouve. Rien a telecharger.");
+      }
+      return;
+    }
+
+    const parsed = JSON.parse(record.schedule || "[]");
+    schedule = normalizeSchedule(parsed);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+    render();
+
+    if (!silent) {
+      setCloudStatus("Donnees cloud telechargees vers cet appareil.");
+    }
+  } catch (error) {
+    setCloudStatus(`Echec du telechargement cloud: ${error.message}`, true);
+  }
+}
+
+async function pushToCloud(silent = false) {
+  if (!isCloudConnected()) {
+    if (!silent) {
+      setCloudStatus("Connectez-vous d'abord a PocketBase.", true);
+    }
+    return;
+  }
+
+  try {
+    const record = await getSnapshotRecord(false);
+    const payload = { schedule: JSON.stringify(schedule) };
+
+    if (record) {
+      await pocketbase.collection(PB_COLLECTION).update(record.id, payload);
+    } else {
+      await pocketbase.collection(PB_COLLECTION).create({
+        owner: pocketbase.authStore.model.id,
+        ...payload,
+      });
+    }
+
+    if (!silent) {
+      setCloudStatus("Donnees locales envoyees vers PocketBase.");
+    }
+  } catch (error) {
+    setCloudStatus(`Echec de l'envoi cloud: ${error.message}`, true);
+  }
+}
+
+function queueCloudSave() {
+  if (!isCloudConnected()) {
+    return;
+  }
+
+  if (cloudSaveTimer) {
+    clearTimeout(cloudSaveTimer);
+  }
+
+  cloudSaveTimer = setTimeout(() => {
+    pushToCloud(true);
+  }, 700);
 }
 
 function createTaskElement(dayKeyValue, task) {
@@ -309,5 +464,106 @@ function render() {
   });
 }
 
-schedule = loadSchedule();
-render();
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+
+  const url = cloudUrlEl.value.trim();
+  const email = cloudEmailEl.value.trim();
+  const password = cloudPasswordEl.value;
+
+  if (!url || !email || !password) {
+    setCloudStatus("Renseignez URL, email et mot de passe.", true);
+    return;
+  }
+
+  try {
+    initPocketBase(url);
+    await pocketbase.collection("users").authWithPassword(email, password);
+
+    localStorage.setItem(PB_URL_KEY, url);
+    localStorage.setItem(PB_EMAIL_KEY, email);
+    cloudPasswordEl.value = "";
+    updateCloudButtons();
+
+    setCloudStatus("Connexion reussie. Synchronisation cloud active.");
+
+    const existing = await getSnapshotRecord(false);
+    if (existing) {
+      await pullFromCloud(true);
+      setCloudStatus("Connexion reussie. Donnees cloud chargees.");
+    } else {
+      await pushToCloud(true);
+      setCloudStatus("Connexion reussie. Snapshot cloud initialise.");
+    }
+  } catch (error) {
+    setCloudStatus(`Echec de connexion: ${error.message}`, true);
+    updateCloudButtons();
+  }
+}
+
+function handleLogout() {
+  if (pocketbase) {
+    pocketbase.authStore.clear();
+  }
+  updateCloudButtons();
+  setCloudStatus("Mode local uniquement.");
+}
+
+async function tryRestoreCloudSession() {
+  const url = localStorage.getItem(PB_URL_KEY);
+  const email = localStorage.getItem(PB_EMAIL_KEY);
+
+  if (url) {
+    cloudUrlEl.value = url;
+  }
+  if (email) {
+    cloudEmailEl.value = email;
+  }
+
+  if (!url) {
+    updateCloudButtons();
+    return;
+  }
+
+  try {
+    initPocketBase(url);
+
+    if (pocketbase.authStore.isValid) {
+      updateCloudButtons();
+      setCloudStatus("Session cloud restauree. Synchronisation active.");
+      await pullFromCloud(true);
+      return;
+    }
+  } catch (error) {
+    setCloudStatus(`Cloud indisponible: ${error.message}`, true);
+  }
+
+  updateCloudButtons();
+}
+
+function bindCloudControls() {
+  cloudStatusEl = document.getElementById("cloud-status");
+  cloudAuthFormEl = document.getElementById("cloud-auth-form");
+  cloudUrlEl = document.getElementById("pb-url");
+  cloudEmailEl = document.getElementById("pb-email");
+  cloudPasswordEl = document.getElementById("pb-password");
+  cloudPullBtnEl = document.getElementById("cloud-pull");
+  cloudPushBtnEl = document.getElementById("cloud-push");
+  cloudLogoutBtnEl = document.getElementById("cloud-logout");
+
+  cloudAuthFormEl.addEventListener("submit", handleLoginSubmit);
+  cloudPullBtnEl.addEventListener("click", () => pullFromCloud(false));
+  cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));
+  cloudLogoutBtnEl.addEventListener("click", handleLogout);
+
+  updateCloudButtons();
+}
+
+async function initApp() {
+  schedule = loadSchedule();
+  bindCloudControls();
+  render();
+  await tryRestoreCloudSession();
+}
+
+initApp();

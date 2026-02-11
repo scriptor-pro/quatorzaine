@@ -1,5 +1,5 @@
 :root {
-  --bg: #f3efe7;
+  --bg: #f0eee9;
   --panel: #fffaf2;
   --line: #d9ceb7;
   --text: #30271f;
@@ -36,6 +36,51 @@ h1 {
 .subtitle {
   margin: 0 0 22px;
   color: var(--muted);
+}
+
+.cloud-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 8px 20px rgba(38, 29, 18, 0.06);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.cloud-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.cloud-auth-form {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr auto;
+  gap: 8px;
+}
+
+.cloud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cloud-status {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.cloud-help {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+code {
+  background: #efe9dc;
+  border-radius: 5px;
+  padding: 1px 5px;
 }
 
 #grid {
@@ -171,6 +216,12 @@ button {
   cursor: pointer;
 }
 
+button.ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line);
+}
+
 button.delete {
   background: transparent;
   color: var(--danger);
@@ -187,6 +238,10 @@ button.delete {
 @media (max-width: 720px) {
   body {
     padding: 14px;
+  }
+
+  .cloud-auth-form {
+    grid-template-columns: 1fr;
   }
 
   .appointment-form {
