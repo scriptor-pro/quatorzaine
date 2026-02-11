@@ -182,6 +182,11 @@ ul {
   white-space: nowrap;
 }
 
+.appointment-duration {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .task-list.drag-target {
   outline: 2px dashed var(--accent);
   outline-offset: 4px;
@@ -196,7 +201,7 @@ ul {
 }
 
 .appointment-form {
-  grid-template-columns: 80px 1fr auto;
+  grid-template-columns: 80px 120px 1fr auto;
 }
 
 input,

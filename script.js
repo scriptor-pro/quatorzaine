@@ -136,6 +136,45 @@ function makeId() {
   return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+function parseTimeToMinutes(value) {
+  if (typeof value !== "string" || !value.includes(":")) {
+    return null;
+  }
+
+  const [hoursRaw, minutesRaw] = value.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function minutesToTimeLabel(totalMinutes) {
+  if (!Number.isFinite(totalMinutes)) {
+    return "--:--";
+  }
+  const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+  const hours = String(Math.floor(normalized / 60)).padStart(2, "0");
+  const minutes = String(normalized % 60).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function formatDuration(durationMinutes) {
+  const value = Number(durationMinutes);
+  if (!Number.isFinite(value) || value <= 0) {
+    return "";
+  }
+
+  if (value % 60 === 0) {
+    const hours = value / 60;
+    return `${hours} h`;
+  }
+
+  return `${value} min`;
+}
+
 function launchConfetti() {
   if (!window.confetti) {
     return;
@@ -339,13 +378,24 @@ function createAppointmentElement(dayKeyValue, appointment) {
 
   const time = document.createElement("span");
   time.className = "appointment-time";
-  time.textContent = appointment.time || "--:--";
+  const startMinutes = parseTimeToMinutes(appointment.time || "");
+  const durationMinutes = Number(appointment.durationMinutes || 0);
+  const hasDuration = Number.isFinite(durationMinutes) && durationMinutes > 0;
+  if (startMinutes !== null && hasDuration) {
+    time.textContent = `${minutesToTimeLabel(startMinutes)}-${minutesToTimeLabel(startMinutes + durationMinutes)}`;
+  } else {
+    time.textContent = appointment.time || "--:--";
+  }
 
   const text = document.createElement("span");
   text.className = "appointment-text";
   text.textContent = appointment.text;
 
-  main.append(time, text);
+  const duration = document.createElement("span");
+  duration.className = "appointment-duration";
+  duration.textContent = formatDuration(appointment.durationMinutes);
+
+  main.append(time, text, duration);
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
@@ -467,6 +517,7 @@ function createDayCard(day) {
   appointmentForm.className = "inline-form appointment-form";
   appointmentForm.innerHTML = `
     <input name="appointmentTime" type="time" required>
+    <input name="appointmentDuration" type="number" min="5" step="5" value="60" placeholder="Duree (min)" required>
     <input name="appointmentText" type="text" placeholder="Rendez-vous" required>
     <button type="submit">Bloquer</button>
   `;
@@ -474,11 +525,22 @@ function createDayCard(day) {
     event.preventDefault();
     const formData = new FormData(appointmentForm);
     const time = String(formData.get("appointmentTime") || "").trim();
+    const durationMinutes = Number(formData.get("appointmentDuration") || 0);
     const text = String(formData.get("appointmentText") || "").trim();
-    if (!time || !text) {
+    if (
+      !time ||
+      !text ||
+      !Number.isFinite(durationMinutes) ||
+      durationMinutes <= 0
+    ) {
       return;
     }
-    day.appointments.push({ id: makeId(), time, text });
+    day.appointments.push({
+      id: makeId(),
+      time,
+      text,
+      durationMinutes: Math.round(durationMinutes),
+    });
     saveSchedule();
     render();
   });
