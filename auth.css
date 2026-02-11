@@ -38,7 +38,7 @@ body {
 .auth-header h1 {
   margin: 0 0 6px;
   font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
-  font-family: "Newsreader", "Georgia", serif;
+  font-family: "Bitter", "Georgia", serif;
   font-weight: 700;
 }
 
@@ -85,7 +85,7 @@ body {
 .auth-card h2 {
   margin: 0 0 6px;
   font-size: 1.2rem;
-  font-family: "Newsreader", "Georgia", serif;
+  font-family: "Bitter", "Georgia", serif;
   font-weight: 700;
 }
 

@@ -38,7 +38,7 @@ h1 {
   margin: 0 0 8px;
   font-size: clamp(1.4rem, 1rem + 2vw, 2rem);
   letter-spacing: 0.02em;
-  font-family: "Newsreader", "Georgia", serif;
+  font-family: "Bitter", "Georgia", serif;
   font-weight: 700;
 }
 
@@ -101,7 +101,7 @@ code {
 .day-title {
   margin: 0;
   font-size: 1rem;
-  font-family: "Newsreader", "Georgia", serif;
+  font-family: "Bitter", "Georgia", serif;
   font-weight: 700;
   color: color-mix(in srgb, var(--day-color) 60%, #1f1f1f);
   background: color-mix(in srgb, var(--day-color) 12%, #ffffff);
