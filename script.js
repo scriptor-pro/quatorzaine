@@ -81,6 +81,39 @@ function normalizeSchedule(raw) {
   });
 }
 
+function parseCloudScheduleValue(rawValue) {
+  if (typeof rawValue === "string") {
+    const text = rawValue.trim();
+    if (!text) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed === "string") {
+        try {
+          return JSON.parse(parsed);
+        } catch (_doubleEncodedError) {
+          return [];
+        }
+      }
+      return parsed;
+    } catch (_invalidJsonError) {
+      return [];
+    }
+  }
+
+  if (Array.isArray(rawValue)) {
+    return rawValue;
+  }
+
+  if (rawValue && typeof rawValue === "object") {
+    return rawValue;
+  }
+
+  return [];
+}
+
 function loadSchedule() {
   const savedRaw = localStorage.getItem(STORAGE_KEY);
   if (!savedRaw) {
@@ -188,7 +221,7 @@ async function pullFromCloud(silent = false) {
       return;
     }
 
-    const parsed = JSON.parse(record.schedule || "[]");
+    const parsed = parseCloudScheduleValue(record.schedule);
     schedule = normalizeSchedule(parsed);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
     render();
