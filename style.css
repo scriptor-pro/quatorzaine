@@ -219,6 +219,17 @@ ul {
   min-width: 0;
 }
 
+.appointment-main {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.appointment-topline {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
 .task-actions {
   display: flex;
   align-items: center;

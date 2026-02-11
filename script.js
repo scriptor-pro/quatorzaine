@@ -507,6 +507,9 @@ function createAppointmentElement(dayKeyValue, appointment) {
   const main = document.createElement("div");
   main.className = "appointment-main";
 
+  const topLine = document.createElement("div");
+  topLine.className = "appointment-topline";
+
   const time = document.createElement("span");
   time.className = "appointment-time";
   const startMinutes = parseTimeToMinutes(appointment.time || "");
@@ -526,7 +529,8 @@ function createAppointmentElement(dayKeyValue, appointment) {
   duration.className = "appointment-duration";
   duration.textContent = formatDuration(appointment.durationMinutes);
 
-  main.append(time, text, duration);
+  topLine.append(time, duration);
+  main.append(topLine, text);
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
