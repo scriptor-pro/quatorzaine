@@ -1,0 +1,176 @@
+:root {
+  --bg: #f0eee9;
+  --text: #2f241c;
+  --muted: #6e6258;
+  --line: #d9ceb7;
+  --accent: #002fa7;
+  --accent-soft: #e3eaff;
+  --signup: #574734;
+  --signup-soft: #f7efe6;
+  --success: #1f7a45;
+  --danger: #b2452f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 500px at 0% 0%, #fff8e8 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #e8f5fb 0%, transparent 55%),
+    var(--bg);
+  padding: 24px;
+}
+
+.auth-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-header h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+}
+
+.auth-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.server-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fffaf2;
+  padding: 14px;
+}
+
+.server-panel h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.server-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.server-form label {
+  grid-column: 1 / -1;
+}
+
+.auth-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.auth-card {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 26px rgba(38, 29, 18, 0.07);
+}
+
+.auth-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+}
+
+.card-subtitle {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.login-card {
+  background: linear-gradient(180deg, var(--accent-soft) 0%, #f5f8ff 100%);
+  border-left: 10px solid var(--accent);
+}
+
+.login-card button {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.signup-card {
+  background: linear-gradient(180deg, var(--signup-soft) 0%, #fffaf4 100%);
+  border-right: 10px solid var(--signup);
+  border-style: dashed;
+}
+
+.signup-card button {
+  background: var(--signup);
+  border-color: var(--signup);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #3e3128;
+}
+
+input,
+button {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 12px;
+  min-height: 44px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+
+button {
+  color: #fff;
+  cursor: pointer;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 3px solid #002fa7;
+  outline-offset: 2px;
+}
+
+.status-text {
+  min-height: 1.3em;
+  margin: 10px 0 0;
+  color: #4c433c;
+  font-size: 0.9rem;
+}
+
+.status-text.error {
+  color: var(--danger);
+}
+
+.status-text.success {
+  color: var(--success);
+}
+
+@media (max-width: 860px) {
+  body {
+    padding: 14px;
+  }
+
+  .auth-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .server-form {
+    grid-template-columns: 1fr;
+  }
+}

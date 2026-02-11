@@ -11,7 +11,6 @@ const DAY_NAMES = [
 ];
 
 const PB_URL_KEY = "quatorzaine_pb_url";
-const PB_EMAIL_KEY = "quatorzaine_pb_email";
 const PB_COLLECTION = "planner_snapshots";
 
 let schedule = [];
@@ -19,13 +18,9 @@ let pocketbase = null;
 let cloudSaveTimer = null;
 
 let cloudStatusEl;
-let cloudAuthFormEl;
-let cloudUrlEl;
-let cloudEmailEl;
-let cloudPasswordEl;
 let cloudPullBtnEl;
 let cloudPushBtnEl;
-let cloudLogoutBtnEl;
+let plannerLogoutBtnEl;
 
 function dayKey(date) {
   const year = date.getFullYear();
@@ -175,8 +170,12 @@ function formatDuration(durationMinutes) {
   return `${value} min`;
 }
 
+function isReducedMotionPreferred() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function launchConfetti() {
-  if (!window.confetti) {
+  if (!window.confetti || isReducedMotionPreferred()) {
     return;
   }
   window.confetti({
@@ -202,7 +201,7 @@ function updateCloudButtons() {
   const connected = isCloudConnected();
   cloudPullBtnEl.disabled = !connected;
   cloudPushBtnEl.disabled = !connected;
-  cloudLogoutBtnEl.disabled = !connected;
+  plannerLogoutBtnEl.disabled = !connected;
 }
 
 function initPocketBase(url) {
@@ -316,6 +315,32 @@ function queueCloudSave() {
   }, 700);
 }
 
+function promptMoveTargetDay(fromDayKey) {
+  const options = schedule
+    .map((day, index) => `${index + 1}. ${day.dayName} ${day.dateLabel}`)
+    .join("\n");
+  const answer = window.prompt(
+    `Deplacer cette tache vers quel jour ?\n${options}`,
+    "1",
+  );
+
+  if (!answer) {
+    return null;
+  }
+
+  const index = Number.parseInt(answer.trim(), 10) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= schedule.length) {
+    return null;
+  }
+
+  const target = schedule[index];
+  if (target.key === fromDayKey) {
+    return null;
+  }
+
+  return target.key;
+}
+
 function createTaskElement(dayKeyValue, task) {
   const li = document.createElement("li");
   li.className = `task-item${task.done ? " done" : ""}`;
@@ -334,7 +359,9 @@ function createTaskElement(dayKeyValue, task) {
   main.className = "task-main";
 
   const check = document.createElement("input");
+  const checkboxId = `task-${task.id}`;
   check.type = "checkbox";
+  check.id = checkboxId;
   check.checked = !!task.done;
   check.addEventListener("change", () => {
     const day = schedule.find((d) => d.key === dayKeyValue);
@@ -347,11 +374,43 @@ function createTaskElement(dayKeyValue, task) {
     }
   });
 
-  const text = document.createElement("span");
+  const text = document.createElement("label");
   text.className = "task-text";
+  text.htmlFor = checkboxId;
   text.textContent = task.text;
 
   main.append(check, text);
+
+  const actions = document.createElement("div");
+  actions.className = "task-actions";
+
+  const moveBtn = document.createElement("button");
+  moveBtn.className = "task-move";
+  moveBtn.type = "button";
+  moveBtn.textContent = "↕";
+  moveBtn.setAttribute("aria-label", "Deplacer la tache vers un autre jour");
+  moveBtn.addEventListener("click", () => {
+    const targetDayKey = promptMoveTargetDay(dayKeyValue);
+    if (!targetDayKey) {
+      return;
+    }
+
+    const fromDay = schedule.find((d) => d.key === dayKeyValue);
+    const toDay = schedule.find((d) => d.key === targetDayKey);
+    if (!fromDay || !toDay) {
+      return;
+    }
+
+    const fromIndex = fromDay.tasks.findIndex((t) => t.id === task.id);
+    if (fromIndex === -1) {
+      return;
+    }
+
+    const [moved] = fromDay.tasks.splice(fromIndex, 1);
+    toDay.tasks.push(moved);
+    saveSchedule();
+    render();
+  });
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
@@ -365,7 +424,8 @@ function createTaskElement(dayKeyValue, task) {
     render();
   });
 
-  li.append(main, deleteBtn);
+  actions.append(moveBtn, deleteBtn);
+  li.append(main, actions);
   return li;
 }
 
@@ -475,8 +535,10 @@ function createDayCard(day) {
 
   const taskForm = document.createElement("form");
   taskForm.className = "inline-form";
+  const taskInputId = `task-input-${day.key}`;
   taskForm.innerHTML = `
-    <input name="taskText" type="text" placeholder="Nouvelle tache" required>
+    <label class="visually-hidden" for="${taskInputId}">Nouvelle tache pour ${day.dayName} ${day.dateLabel}</label>
+    <input id="${taskInputId}" name="taskText" type="text" placeholder="Nouvelle tache" required>
     <button type="submit">Ajouter</button>
   `;
   taskForm.addEventListener("submit", (event) => {
@@ -515,10 +577,16 @@ function createDayCard(day) {
 
   const appointmentForm = document.createElement("form");
   appointmentForm.className = "inline-form appointment-form";
+  const timeInputId = `appointment-time-${day.key}`;
+  const durationInputId = `appointment-duration-${day.key}`;
+  const textInputId = `appointment-text-${day.key}`;
   appointmentForm.innerHTML = `
-    <input name="appointmentTime" type="time" required>
-    <input name="appointmentDuration" type="number" min="5" step="5" value="60" placeholder="Duree (min)" required>
-    <input name="appointmentText" type="text" placeholder="Rendez-vous" required>
+    <label class="visually-hidden" for="${timeInputId}">Heure du rendez-vous pour ${day.dayName} ${day.dateLabel}</label>
+    <input id="${timeInputId}" name="appointmentTime" type="time" required>
+    <label class="visually-hidden" for="${durationInputId}">Duree du rendez-vous en minutes</label>
+    <input id="${durationInputId}" name="appointmentDuration" type="number" min="5" step="5" value="60" placeholder="Duree (min)" required>
+    <label class="visually-hidden" for="${textInputId}">Description du rendez-vous</label>
+    <input id="${textInputId}" name="appointmentText" type="text" placeholder="Rendez-vous" required>
     <button type="submit">Bloquer</button>
   `;
   appointmentForm.addEventListener("submit", (event) => {
@@ -559,106 +627,66 @@ function render() {
   });
 }
 
-async function handleLoginSubmit(event) {
-  event.preventDefault();
-
-  const url = cloudUrlEl.value.trim();
-  const email = cloudEmailEl.value.trim();
-  const password = cloudPasswordEl.value;
-
-  if (!url || !email || !password) {
-    setCloudStatus("Renseignez URL, email et mot de passe.", true);
-    return;
-  }
-
-  try {
-    initPocketBase(url);
-    await pocketbase.collection("users").authWithPassword(email, password);
-
-    localStorage.setItem(PB_URL_KEY, url);
-    localStorage.setItem(PB_EMAIL_KEY, email);
-    cloudPasswordEl.value = "";
-    updateCloudButtons();
-
-    setCloudStatus("Connexion reussie. Synchronisation cloud active.");
-
-    const existing = await getSnapshotRecord(false);
-    if (existing) {
-      await pullFromCloud(true);
-      setCloudStatus("Connexion reussie. Donnees cloud chargees.");
-    } else {
-      await pushToCloud(true);
-      setCloudStatus("Connexion reussie. Snapshot cloud initialise.");
-    }
-  } catch (error) {
-    setCloudStatus(`Echec de connexion: ${error.message}`, true);
-    updateCloudButtons();
-  }
+function redirectToLogin() {
+  window.location.href = "index.html";
 }
 
 function handleLogout() {
   if (pocketbase) {
     pocketbase.authStore.clear();
   }
-  updateCloudButtons();
-  setCloudStatus("Mode local uniquement.");
+  redirectToLogin();
 }
 
-async function tryRestoreCloudSession() {
+function bindPlannerControls() {
+  cloudStatusEl = document.getElementById("cloud-status");
+  cloudPullBtnEl = document.getElementById("cloud-pull");
+  cloudPushBtnEl = document.getElementById("cloud-push");
+  plannerLogoutBtnEl = document.getElementById("planner-logout");
+
+  cloudPullBtnEl.addEventListener("click", () => pullFromCloud(false));
+  cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));
+  plannerLogoutBtnEl.addEventListener("click", handleLogout);
+
+  updateCloudButtons();
+}
+
+function ensureCloudSession() {
   const url = localStorage.getItem(PB_URL_KEY);
-  const email = localStorage.getItem(PB_EMAIL_KEY);
-
-  if (url) {
-    cloudUrlEl.value = url;
-  }
-  if (email) {
-    cloudEmailEl.value = email;
-  }
-
   if (!url) {
-    updateCloudButtons();
-    return;
+    redirectToLogin();
+    return false;
   }
 
   try {
     initPocketBase(url);
-
-    if (pocketbase.authStore.isValid) {
-      updateCloudButtons();
-      setCloudStatus("Session cloud restauree. Synchronisation active.");
-      await pullFromCloud(true);
-      return;
-    }
-  } catch (error) {
-    setCloudStatus(`Cloud indisponible: ${error.message}`, true);
+  } catch (_error) {
+    redirectToLogin();
+    return false;
   }
 
-  updateCloudButtons();
-}
+  if (!pocketbase.authStore.isValid) {
+    redirectToLogin();
+    return false;
+  }
 
-function bindCloudControls() {
-  cloudStatusEl = document.getElementById("cloud-status");
-  cloudAuthFormEl = document.getElementById("cloud-auth-form");
-  cloudUrlEl = document.getElementById("pb-url");
-  cloudEmailEl = document.getElementById("pb-email");
-  cloudPasswordEl = document.getElementById("pb-password");
-  cloudPullBtnEl = document.getElementById("cloud-pull");
-  cloudPushBtnEl = document.getElementById("cloud-push");
-  cloudLogoutBtnEl = document.getElementById("cloud-logout");
-
-  cloudAuthFormEl.addEventListener("submit", handleLoginSubmit);
-  cloudPullBtnEl.addEventListener("click", () => pullFromCloud(false));
-  cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));
-  cloudLogoutBtnEl.addEventListener("click", handleLogout);
-
-  updateCloudButtons();
+  return true;
 }
 
 async function initApp() {
+  bindPlannerControls();
+
+  if (!ensureCloudSession()) {
+    return;
+  }
+
   schedule = loadSchedule();
-  bindCloudControls();
   render();
-  await tryRestoreCloudSession();
+  updateCloudButtons();
+  setCloudStatus("Session cloud active. Synchronisation en cours...");
+
+  await pullFromCloud(true);
+  setCloudStatus("Session cloud active.");
 }
 
 initApp();

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quatorzaine - Planner</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Ma quatorzaine</h1>
+      <p class="subtitle">
+        Taches deplacables + rendez-vous fixes sur la meme page
+      </p>
+
+      <section class="planner-toolbar" aria-label="Actions cloud">
+        <p
+          id="cloud-status"
+          class="planner-status"
+          role="status"
+          aria-live="polite"
+        >
+          Connexion cloud en cours...
+        </p>
+        <div class="toolbar-actions">
+          <button id="cloud-pull" type="button">Telecharger cloud</button>
+          <button id="cloud-push" type="button">
+            Envoyer local vers cloud
+          </button>
+          <button id="planner-logout" type="button" class="ghost">
+            Deconnexion
+          </button>
+        </div>
+      </section>
+
+      <div id="grid" aria-live="polite"></div>
+    </main>
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/pocketbase@0.26.8/dist/pocketbase.umd.js"
+    ></script>
+    <script defer src="script.js"></script>
+  </body>
+</html>
