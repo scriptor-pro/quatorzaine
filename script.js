@@ -562,7 +562,6 @@ function createDayCard(day) {
 
   const tasksSection = document.createElement("div");
   tasksSection.className = "section";
-  tasksSection.innerHTML = '<p class="section-title">Taches</p>';
 
   const taskList = document.createElement("ul");
   taskList.className = "task-list";
@@ -600,12 +599,7 @@ function createDayCard(day) {
     render();
   });
 
-  if (day.tasks.length === 0) {
-    const empty = document.createElement("li");
-    empty.className = "empty";
-    empty.textContent = "Aucune tache";
-    taskList.append(empty);
-  } else {
+  if (day.tasks.length > 0) {
     day.tasks.forEach((task) =>
       taskList.append(createTaskElement(day.key, task)),
     );
@@ -635,15 +629,9 @@ function createDayCard(day) {
 
   const appointmentsSection = document.createElement("div");
   appointmentsSection.className = "section";
-  appointmentsSection.innerHTML = '<p class="section-title">Rendez-vous</p>';
 
   const appointmentList = document.createElement("ul");
-  if (day.appointments.length === 0) {
-    const empty = document.createElement("li");
-    empty.className = "empty";
-    empty.textContent = "Aucun rendez-vous";
-    appointmentList.append(empty);
-  } else {
+  if (day.appointments.length > 0) {
     day.appointments
       .slice()
       .sort((a, b) => a.time.localeCompare(b.time))
