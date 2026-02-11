@@ -64,67 +64,6 @@ h1 {
   flex-wrap: wrap;
 }
 
-.cloud-panel {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--panel);
-  box-shadow: 0 8px 20px rgba(38, 29, 18, 0.06);
-  padding: 14px;
-  margin-bottom: 16px;
-}
-
-.cloud-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  list-style: none;
-}
-
-.cloud-title::-webkit-details-marker {
-  display: none;
-}
-
-.cloud-title::before {
-  content: "▾";
-  display: inline-block;
-  margin-right: 8px;
-  transition: transform 0.2s ease;
-}
-
-.cloud-panel:not([open]) .cloud-title::before {
-  transform: rotate(-90deg);
-}
-
-.cloud-content {
-  margin-top: 10px;
-}
-
-.cloud-auth-form {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr auto;
-  gap: 8px;
-}
-
-.cloud-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.cloud-status {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.cloud-help {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
 code {
   background: #efe9dc;
   border-radius: 5px;
@@ -155,12 +94,6 @@ code {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-}
-
-.day-date {
-  color: var(--muted);
-  font-weight: 400;
-  font-size: 0.86rem;
 }
 
 .section {
@@ -349,10 +282,6 @@ button.delete {
 @media (max-width: 720px) {
   body {
     padding: 14px;
-  }
-
-  .cloud-auth-form {
-    grid-template-columns: 1fr;
   }
 
   .appointment-form {

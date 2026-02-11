@@ -709,6 +709,11 @@ function handleLogout() {
   if (pocketbase) {
     pocketbase.authStore.clear();
   }
+
+  if (window.confirm("Effacer aussi les donnees locales de cet appareil ?")) {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
   redirectToLogin();
 }
 

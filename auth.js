@@ -16,6 +16,26 @@ function setStatus(target, message, type = "") {
   if (type) {
     target.classList.add(type);
   }
+
+  const isError = type === "error";
+  target.setAttribute("role", isError ? "alert" : "status");
+  target.setAttribute("aria-live", isError ? "assertive" : "polite");
+}
+
+function extractErrorMessage(error) {
+  if (error?.response?.message) {
+    return String(error.response.message);
+  }
+  return String(error?.message || "Erreur inconnue");
+}
+
+function isVerificationRelatedError(error) {
+  const message = extractErrorMessage(error).toLowerCase();
+  return (
+    message.includes("verify") ||
+    message.includes("verified") ||
+    message.includes("verification")
+  );
 }
 
 function initPocketBase(url) {
@@ -86,7 +106,20 @@ async function handleLoginSubmit(event) {
     setStatus(loginStatusEl, "Connexion reussie. Redirection...", "success");
     redirectToPlanner();
   } catch (error) {
-    setStatus(loginStatusEl, `Echec de connexion: ${error.message}`, "error");
+    if (isVerificationRelatedError(error)) {
+      setStatus(
+        loginStatusEl,
+        "Compte cree mais email non verifie. Verifiez votre boite mail avant de vous connecter.",
+        "error",
+      );
+      return;
+    }
+
+    setStatus(
+      loginStatusEl,
+      `Echec de connexion: ${extractErrorMessage(error)}`,
+      "error",
+    );
   }
 }
 
@@ -119,12 +152,30 @@ async function handleSignupSubmit(event) {
       password,
       passwordConfirm,
     });
-    await pocketbase.collection("users").authWithPassword(email, password);
+
+    try {
+      await pocketbase.collection("users").authWithPassword(email, password);
+    } catch (authError) {
+      if (isVerificationRelatedError(authError)) {
+        setStatus(
+          signupStatusEl,
+          "Compte cree. Verifiez votre email puis connectez-vous.",
+          "success",
+        );
+        return;
+      }
+      throw authError;
+    }
+
     saveConfiguredUrl(url);
     setStatus(signupStatusEl, "Compte cree. Redirection...", "success");
     redirectToPlanner();
   } catch (error) {
-    setStatus(signupStatusEl, `Echec de creation: ${error.message}`, "error");
+    setStatus(
+      signupStatusEl,
+      `Echec de creation: ${extractErrorMessage(error)}`,
+      "error",
+    );
   }
 }
 

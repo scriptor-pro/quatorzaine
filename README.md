@@ -2,22 +2,30 @@
 
 aujourd'hui et les 13 jours suivants : organisation et productivité
 
+## Structure actuelle
+
+- `index.html`: page d'authentification (URL serveur, connexion, creation de compte).
+- `quatorzaine.html`: planner 14 jours (taches + rendez-vous) synchronise avec PocketBase.
+
 ## PocketBase sync setup
 
-L'application fonctionne en localStorage sans serveur.
-Pour activer la synchronisation multi-appareils avec PocketBase:
+L'application peut fonctionner localement, mais la sync multi-appareils utilise PocketBase.
 
-1. Lancer un serveur PocketBase et activer l'auth email/password sur la collection `users`.
-2. Creer une collection `planner_snapshots` avec ces champs:
-   - `owner`: relation vers `users` (1 record)
-   - `schedule`: `json` (ou `text` si besoin)
+1. Lancer PocketBase et activer l'auth email/password sur la collection `users`.
+2. Creer une collection `planner_snapshots` avec:
+   - `owner`: relation vers `users` (single)
+   - `schedule`: `json` (ou `text`)
 3. Regles d'acces minimales sur `planner_snapshots`:
    - `listRule`: `owner = @request.auth.id`
    - `viewRule`: `owner = @request.auth.id`
    - `createRule`: `owner = @request.auth.id`
    - `updateRule`: `owner = @request.auth.id`
    - `deleteRule`: `owner = @request.auth.id`
-4. Dans l'UI, saisir URL PocketBase + email + mot de passe, puis cliquer sur `Connexion`.
+4. Ouvrir `index.html`, saisir l'URL PocketBase, puis:
+   - `Connexion` pour un compte existant
+   - `Creer un compte` pour inscription + ouverture du planner
 
-Le bouton `Telecharger cloud` remplace les donnees locales par la version cloud.
-Le bouton `Envoyer local vers cloud` ecrase le snapshot cloud avec les donnees locales.
+Dans le planner (`quatorzaine.html`):
+
+- `Telecharger cloud` remplace les donnees locales par la version cloud.
+- `Envoyer local vers cloud` ecrase le snapshot cloud avec les donnees locales.
