@@ -24,7 +24,7 @@
 
 body {
   margin: 0;
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--text);
   background:
     radial-gradient(1400px 500px at 20% -20%, #fdf7eb 0%, transparent 60%),
@@ -38,6 +38,8 @@ h1 {
   margin: 0 0 8px;
   font-size: clamp(1.4rem, 1rem + 2vw, 2rem);
   letter-spacing: 0.02em;
+  font-family: "Newsreader", "Georgia", serif;
+  font-weight: 700;
 }
 
 .subtitle {
@@ -99,6 +101,8 @@ code {
 .day-title {
   margin: 0;
   font-size: 1rem;
+  font-family: "Newsreader", "Georgia", serif;
+  font-weight: 700;
   color: color-mix(in srgb, var(--day-color) 60%, #1f1f1f);
   background: color-mix(in srgb, var(--day-color) 12%, #ffffff);
   border: 1px solid color-mix(in srgb, var(--day-color) 30%, #ffffff);
