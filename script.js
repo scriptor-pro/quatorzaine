@@ -555,7 +555,7 @@ function createDayCard(day) {
 
   const tasksSection = document.createElement("div");
   tasksSection.className = "section";
-  tasksSection.innerHTML = '<p class="section-title">Taches deplacables</p>';
+  tasksSection.innerHTML = '<p class="section-title">Taches</p>';
 
   const taskList = document.createElement("ul");
   taskList.className = "task-list";
@@ -628,8 +628,7 @@ function createDayCard(day) {
 
   const appointmentsSection = document.createElement("div");
   appointmentsSection.className = "section";
-  appointmentsSection.innerHTML =
-    '<p class="section-title">Rendez-vous fixes</p>';
+  appointmentsSection.innerHTML = '<p class="section-title">Rendez-vous</p>';
 
   const appointmentList = document.createElement("ul");
   if (day.appointments.length === 0) {
