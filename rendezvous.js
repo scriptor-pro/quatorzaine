@@ -1,5 +1,6 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
 const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
+const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
 const DAY_COUNT = 14;
@@ -15,6 +16,7 @@ const DAY_NAMES = [
 
 let schedule = [];
 let recurringRules = [];
+let detachedAppointments = [];
 let editingRecurringRuleId = null;
 let pocketbase = null;
 let cloudSaveTimer = null;
@@ -116,6 +118,43 @@ function normalizeRecurringRules(raw) {
     .filter(Boolean);
 }
 
+function normalizeDetachedAppointments(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((appointment) => {
+      if (!appointment || typeof appointment !== "object") {
+        return null;
+      }
+
+      const date = String(appointment.date || "").trim();
+      if (!parseDayKeyToDate(date)) {
+        return null;
+      }
+
+      const time = String(appointment.time || "").trim();
+      const text = String(appointment.text || "").trim();
+      const durationMinutes = Math.round(Number(appointment.durationMinutes) || 0);
+      if (!time || !text || durationMinutes <= 0) {
+        return null;
+      }
+
+      return {
+        id:
+          typeof appointment.id === "string" && appointment.id
+            ? appointment.id
+            : makeId(),
+        date,
+        time,
+        text,
+        durationMinutes,
+      };
+    })
+    .filter(Boolean);
+}
+
 function loadSchedule() {
   const savedRaw = localStorage.getItem(STORAGE_KEY);
   if (!savedRaw) {
@@ -147,8 +186,29 @@ function loadRecurringRules() {
   }
 }
 
+function loadDetachedAppointments() {
+  const savedRaw = localStorage.getItem(DETACHED_APPOINTMENTS_STORAGE_KEY);
+  if (!savedRaw) {
+    return [];
+  }
+
+  try {
+    return normalizeDetachedAppointments(JSON.parse(savedRaw));
+  } catch (_error) {
+    return [];
+  }
+}
+
 function saveRecurringRules() {
   localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
+  queueCloudSave();
+}
+
+function saveDetachedAppointments() {
+  localStorage.setItem(
+    DETACHED_APPOINTMENTS_STORAGE_KEY,
+    JSON.stringify(detachedAppointments),
+  );
   queueCloudSave();
 }
 
@@ -156,6 +216,7 @@ function serializeSnapshot() {
   return JSON.stringify({
     schedule,
     recurringRules,
+    detachedAppointments,
   });
 }
 
@@ -404,7 +465,7 @@ function updateModeVisibility() {
     dateEl.required = true;
     startDateEl.required = false;
     modeHelpEl.textContent =
-      "Ponctuel : ajoute ce rendez-vous une seule fois dans la quatorzaine.";
+      "Ponctuel : ajoute ce rendez-vous une seule fois, même hors quatorzaine.";
     return;
   }
 
@@ -481,22 +542,29 @@ function bindForm() {
       editingRecurringRuleId = null;
       const date = String(formData.get("date") || "").trim();
       const day = schedule.find((candidate) => candidate.key === date);
-      if (!day) {
-        setStatus(
-          "Date hors quatorzaine. Choisissez un jour dans les 14 prochains jours.",
-          true,
-        );
-        return;
-      }
 
-      day.appointments.push({
-        id: makeId(),
-        time,
-        text,
-        durationMinutes: Math.round(durationMinutes),
-      });
-      saveSchedule();
-      setStatus("Rendez-vous ponctuel enregistré.");
+      if (day) {
+        day.appointments.push({
+          id: makeId(),
+          time,
+          text,
+          durationMinutes: Math.round(durationMinutes),
+        });
+        saveSchedule();
+        setStatus("Rendez-vous ponctuel enregistré dans la quatorzaine.");
+      } else {
+        detachedAppointments.push({
+          id: makeId(),
+          date,
+          time,
+          text,
+          durationMinutes: Math.round(durationMinutes),
+        });
+        saveDetachedAppointments();
+        setStatus(
+          "Rendez-vous ponctuel enregistré hors quatorzaine. Il apparaîtra au bon moment.",
+        );
+      }
       resetAppointmentFormToCreateMode();
       return;
     }
@@ -561,6 +629,7 @@ function bindForm() {
 function initApp() {
   schedule = loadSchedule();
   recurringRules = loadRecurringRules();
+  detachedAppointments = loadDetachedAppointments();
   initPocketBase(localStorage.getItem(PB_URL_KEY));
   bindForm();
   renderRulesList();

@@ -1,5 +1,6 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
 const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
+const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
 const DAY_COUNT = 14;
 const DAY_NAMES = [
   "Dimanche",
@@ -16,6 +17,7 @@ const PB_COLLECTION = "planner_snapshots";
 
 let schedule = [];
 let recurringRules = [];
+let detachedAppointments = [];
 let pocketbase = null;
 let cloudSaveTimer = null;
 
@@ -202,11 +204,48 @@ function normalizeRecurringRules(raw) {
     });
 }
 
+function normalizeDetachedAppointments(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((appointment) => {
+      if (!appointment || typeof appointment !== "object") {
+        return null;
+      }
+
+      const date = String(appointment.date || "").trim();
+      if (!dayKeyToDate(date)) {
+        return null;
+      }
+
+      const time = String(appointment.time || "").trim();
+      const text = String(appointment.text || "").trim();
+      const durationMinutes = Math.round(Number(appointment.durationMinutes) || 0);
+      if (!time || !text || durationMinutes <= 0) {
+        return null;
+      }
+
+      return {
+        id:
+          typeof appointment.id === "string" && appointment.id
+            ? appointment.id
+            : makeId(),
+        date,
+        time,
+        text,
+        durationMinutes,
+      };
+    })
+    .filter(Boolean);
+}
+
 function parseCloudSnapshot(rawValue) {
   if (typeof rawValue === "string") {
     const text = rawValue.trim();
     if (!text) {
-      return { schedule: [], recurringRules: [] };
+      return { schedule: [], recurringRules: [], detachedAppointments: [] };
     }
 
     try {
@@ -215,17 +254,17 @@ function parseCloudSnapshot(rawValue) {
         try {
           return parseCloudSnapshot(parsed);
         } catch (_doubleEncodedError) {
-          return { schedule: [], recurringRules: [] };
+          return { schedule: [], recurringRules: [], detachedAppointments: [] };
         }
       }
       return parseCloudSnapshot(parsed);
     } catch (_invalidJsonError) {
-      return { schedule: [], recurringRules: [] };
+      return { schedule: [], recurringRules: [], detachedAppointments: [] };
     }
   }
 
   if (Array.isArray(rawValue)) {
-    return { schedule: rawValue, recurringRules: [] };
+    return { schedule: rawValue, recurringRules: [], detachedAppointments: [] };
   }
 
   if (rawValue && typeof rawValue === "object") {
@@ -234,10 +273,13 @@ function parseCloudSnapshot(rawValue) {
       recurringRules: Array.isArray(rawValue.recurringRules)
         ? rawValue.recurringRules
         : [],
+      detachedAppointments: Array.isArray(rawValue.detachedAppointments)
+        ? rawValue.detachedAppointments
+        : [],
     };
   }
 
-  return { schedule: [], recurringRules: [] };
+  return { schedule: [], recurringRules: [], detachedAppointments: [] };
 }
 
 function loadSchedule() {
@@ -266,6 +308,19 @@ function loadRecurringRules() {
   }
 }
 
+function loadDetachedAppointments() {
+  const savedRaw = localStorage.getItem(DETACHED_APPOINTMENTS_STORAGE_KEY);
+  if (!savedRaw) {
+    return [];
+  }
+
+  try {
+    return normalizeDetachedAppointments(JSON.parse(savedRaw));
+  } catch (_error) {
+    return [];
+  }
+}
+
 function saveSchedule() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
   queueCloudSave();
@@ -276,10 +331,19 @@ function saveRecurringRules() {
   queueCloudSave();
 }
 
+function saveDetachedAppointments() {
+  localStorage.setItem(
+    DETACHED_APPOINTMENTS_STORAGE_KEY,
+    JSON.stringify(detachedAppointments),
+  );
+  queueCloudSave();
+}
+
 function serializeSnapshot() {
   return JSON.stringify({
     schedule,
     recurringRules,
+    detachedAppointments,
   });
 }
 
@@ -418,8 +482,15 @@ async function pullFromCloud(silent = false) {
     const snapshot = parseCloudSnapshot(record.schedule);
     schedule = normalizeSchedule(snapshot.schedule);
     recurringRules = normalizeRecurringRules(snapshot.recurringRules);
+    detachedAppointments = normalizeDetachedAppointments(
+      snapshot.detachedAppointments,
+    );
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
     localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
+    localStorage.setItem(
+      DETACHED_APPOINTMENTS_STORAGE_KEY,
+      JSON.stringify(detachedAppointments),
+    );
     render();
 
     if (!silent) {
@@ -536,7 +607,18 @@ function getAppointmentsForDay(day) {
       isRecurring: true,
     }));
 
-  return oneShots.concat(recurringForDay).sort((a, b) => {
+  const detachedForDay = detachedAppointments
+    .filter((appointment) => appointment.date === day.key)
+    .map((appointment) => ({
+      id: appointment.id,
+      time: appointment.time,
+      text: appointment.text,
+      durationMinutes: appointment.durationMinutes,
+      isRecurring: false,
+      isDetached: true,
+    }));
+
+  return oneShots.concat(detachedForDay, recurringForDay).sort((a, b) => {
     const aTime = parseTimeToMinutes(a.time || "");
     const bTime = parseTimeToMinutes(b.time || "");
     const aValue = aTime === null ? Number.POSITIVE_INFINITY : aTime;
@@ -708,6 +790,16 @@ function createAppointmentElement(dayKeyValue, appointment) {
       window.location.href = "rendezvous.html";
       return;
     }
+
+    if (appointment.isDetached) {
+      detachedAppointments = detachedAppointments.filter(
+        (candidate) => candidate.id !== appointment.id,
+      );
+      saveDetachedAppointments();
+      render();
+      return;
+    }
+
     const day = schedule.find((d) => d.key === dayKeyValue);
     day.appointments = day.appointments.filter((a) => a.id !== appointment.id);
     saveSchedule();
@@ -898,6 +990,8 @@ function handleLogout() {
 
   if (window.confirm("Effacer aussi les données locales de cet appareil ?")) {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(RECURRING_STORAGE_KEY);
+    localStorage.removeItem(DETACHED_APPOINTMENTS_STORAGE_KEY);
   }
 
   redirectToLogin();
@@ -947,6 +1041,7 @@ async function initApp() {
 
   schedule = loadSchedule();
   recurringRules = loadRecurringRules();
+  detachedAppointments = loadDetachedAppointments();
   render();
   updateCloudButtons();
   setCloudStatus("Session cloud active. Synchronisation en cours...");
