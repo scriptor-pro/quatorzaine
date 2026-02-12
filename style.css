@@ -51,6 +51,7 @@ h1 {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: center;
   margin: 0 0 16px;
 }
 
