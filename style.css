@@ -58,6 +58,7 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   min-height: 40px;
   padding: 0 12px;
   border-radius: 999px;
@@ -66,6 +67,24 @@ h1 {
   border: 1px solid var(--line);
   background: #fff;
   font-weight: 600;
+}
+
+.nav-icon {
+  line-height: 1;
+}
+
+.nav-icon-day {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef3ff;
+  border: 1px solid #c7d5ff;
+  color: #1a3f9c;
+  font-size: 0.68rem;
+  font-weight: 800;
 }
 
 .app-nav-link.active {

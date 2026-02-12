@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quatorzaine - Statistiques</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.bunny.net/css?family=manrope:400,500,700|public-sans:500,700"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="stats.css" />
+  </head>
+  <body>
+    <main class="stats-shell">
+      <h1>Statistiques</h1>
+      <p class="subtitle">Top 10 des jours avec le plus de tâches terminées</p>
+      <nav class="app-nav" aria-label="Navigation principale">
+        <a class="app-nav-link" href="quatorzaine.html"
+          ><span class="nav-icon nav-icon-day" aria-hidden="true">14</span> Planner</a
+        >
+        <a class="app-nav-link" href="rendezvous.html"
+          ><span class="nav-icon" aria-hidden="true">🕒</span> Rendez-vous</a
+        >
+        <a class="app-nav-link active" href="stats.html" aria-current="page"
+          ><span class="nav-icon" aria-hidden="true">📊</span> Statistiques</a
+        >
+      </nav>
+
+      <section class="stats-panel" aria-label="Classement des jours">
+        <h2>Classement</h2>
+        <p id="stats-summary" class="planner-status" role="status" aria-live="polite"></p>
+        <ol id="stats-list" class="stats-list"></ol>
+      </section>
+    </main>
+
+    <script defer src="stats.js"></script>
+  </body>
+</html>
