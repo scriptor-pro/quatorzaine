@@ -14,7 +14,7 @@
   <body>
     <main class="rendezvous-shell">
       <h1>Rendez-vous</h1>
-      <p class="subtitle">Ajoutez un rendez-vous unique ou recurrent</p>
+      <p class="subtitle">Ajoutez un rendez-vous ponctuel ou en récurrence</p>
       <nav class="app-nav" aria-label="Navigation principale">
         <a class="app-nav-link" href="quatorzaine.html">Planner</a>
         <a class="app-nav-link active" href="rendezvous.html" aria-current="page"
@@ -42,7 +42,7 @@
           </div>
 
           <div class="field-group">
-            <label for="appointment-duration">Duree (min)</label>
+            <label for="appointment-duration">Durée (min)</label>
             <input
               id="appointment-duration"
               name="duration"
@@ -58,12 +58,15 @@
             <label for="appointment-mode">Type</label>
             <select id="appointment-mode" name="mode">
               <option value="one-shot">Ponctuel</option>
-              <option value="recurring">Recurrent</option>
+              <option value="recurring">Récurrence</option>
             </select>
+            <p id="mode-help" class="form-hint">
+              Ponctuel : un seul jour. Récurrence : apparition automatique.
+            </p>
           </div>
 
           <div class="field-group recurring-only hidden">
-            <label for="appointment-start-date">Date de debut</label>
+            <label for="appointment-start-date">Date de début</label>
             <input id="appointment-start-date" name="startDate" type="date" required />
           </div>
 
@@ -73,7 +76,7 @@
           </div>
 
           <div class="field-group recurring-only hidden">
-            <label for="recurrence-frequency">Frequence</label>
+            <label for="recurrence-frequency">Fréquence</label>
             <select id="recurrence-frequency" name="frequency">
               <option value="daily">Tous les jours</option>
               <option value="weekly">Chaque semaine</option>
@@ -86,7 +89,7 @@
           </div>
 
           <fieldset class="field-group recurring-only weekday-picker hidden">
-            <legend>Jours de repetition (hebdomadaire)</legend>
+            <legend>Jours de répétition (hebdomadaire)</legend>
             <label><input type="checkbox" name="weekday" value="1" /> Lun</label>
             <label><input type="checkbox" name="weekday" value="2" /> Mar</label>
             <label><input type="checkbox" name="weekday" value="3" /> Mer</label>
@@ -101,8 +104,9 @@
         <p id="appointment-status" class="planner-status" role="status" aria-live="polite"></p>
       </section>
 
-      <section class="rendezvous-panel" aria-label="Recurrents actifs">
-        <h2>Recurrents actifs</h2>
+      <section class="rendezvous-panel" aria-label="Récurrences actives">
+        <h2>Récurrences actives</h2>
+        <p id="rules-summary" class="form-hint"></p>
         <ul id="rules-list" class="rules-list"></ul>
       </section>
     </main>

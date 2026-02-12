@@ -77,7 +77,7 @@ async function handleServerSubmit(event) {
     initPocketBase(url);
     await pocketbase.health.check();
     saveConfiguredUrl(url);
-    setStatus(serverStatusEl, "Serveur enregistre et accessible.", "success");
+    setStatus(serverStatusEl, "Serveur enregistré et accessible.", "success");
   } catch (error) {
     setStatus(
       serverStatusEl,
@@ -103,13 +103,13 @@ async function handleLoginSubmit(event) {
     initPocketBase(url);
     await pocketbase.collection("users").authWithPassword(email, password);
     saveConfiguredUrl(url);
-    setStatus(loginStatusEl, "Connexion reussie. Redirection...", "success");
+    setStatus(loginStatusEl, "Connexion réussie. Redirection...", "success");
     redirectToPlanner();
   } catch (error) {
     if (isVerificationRelatedError(error)) {
       setStatus(
         loginStatusEl,
-        "Compte cree mais email non verifie. Verifiez votre boite mail avant de vous connecter.",
+        "Compte créé mais email non vérifié. Vérifiez votre boîte mail avant de vous connecter.",
         "error",
       );
       return;
@@ -117,7 +117,7 @@ async function handleLoginSubmit(event) {
 
     setStatus(
       loginStatusEl,
-      `Echec de connexion: ${extractErrorMessage(error)}`,
+      `Échec de connexion: ${extractErrorMessage(error)}`,
       "error",
     );
   }
@@ -159,7 +159,7 @@ async function handleSignupSubmit(event) {
       if (isVerificationRelatedError(authError)) {
         setStatus(
           signupStatusEl,
-          "Compte cree. Verifiez votre email puis connectez-vous.",
+          "Compte créé. Vérifiez votre email puis connectez-vous.",
           "success",
         );
         return;
@@ -168,12 +168,12 @@ async function handleSignupSubmit(event) {
     }
 
     saveConfiguredUrl(url);
-    setStatus(signupStatusEl, "Compte cree. Redirection...", "success");
+    setStatus(signupStatusEl, "Compte créé. Redirection...", "success");
     redirectToPlanner();
   } catch (error) {
     setStatus(
       signupStatusEl,
-      `Echec de creation: ${extractErrorMessage(error)}`,
+      `Échec de création: ${extractErrorMessage(error)}`,
       "error",
     );
   }

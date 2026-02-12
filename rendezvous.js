@@ -227,6 +227,27 @@ function getTodayDateValue() {
   return dayKey(new Date());
 }
 
+function parseDayKeyToDate(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const parts = value.split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 function formatRule(rule) {
   if (rule.frequency === "daily") {
     return `Tous les jours a ${rule.time} (${rule.durationMinutes} min)`;
@@ -241,12 +262,17 @@ function formatRule(rule) {
 
 function renderRulesList() {
   const listEl = document.getElementById("rules-list");
+  const summaryEl = document.getElementById("rules-summary");
   listEl.innerHTML = "";
+  summaryEl.textContent =
+    recurringRules.length === 0
+      ? "Aucune récurrence active."
+      : `${recurringRules.length} récurrence(s) active(s).`;
 
   if (recurringRules.length === 0) {
     const empty = document.createElement("li");
-    empty.className = "rule-item";
-    empty.textContent = "Aucun rendez-vous recurrent.";
+    empty.className = "rule-item empty";
+    empty.textContent = "Aucun rendez-vous en récurrence.";
     listEl.append(empty);
     return;
   }
@@ -275,7 +301,7 @@ function renderRulesList() {
       recurringRules = recurringRules.filter((candidate) => candidate.id !== rule.id);
       saveRecurringRules();
       renderRulesList();
-      setStatus("Rendez-vous recurrent supprime.");
+      setStatus("Rendez-vous en récurrence supprimé.");
     });
 
     item.append(text, deleteBtn);
@@ -292,12 +318,16 @@ function updateModeVisibility() {
   const weekdayPickerEl = document.querySelector(".weekday-picker");
   const dateEl = document.getElementById("appointment-date");
   const startDateEl = document.getElementById("appointment-start-date");
+  const modeHelpEl = document.getElementById("mode-help");
+  const weekdayInputs = document.querySelectorAll('input[name="weekday"]');
 
   if (mode === "one-shot") {
     oneShotOnlyEls.forEach((el) => el.classList.remove("hidden"));
     recurringOnlyEls.forEach((el) => el.classList.add("hidden"));
     dateEl.required = true;
     startDateEl.required = false;
+    modeHelpEl.textContent =
+      "Ponctuel : ajoute ce rendez-vous une seule fois dans la quatorzaine.";
     return;
   }
 
@@ -305,11 +335,20 @@ function updateModeVisibility() {
   recurringOnlyEls.forEach((el) => el.classList.remove("hidden"));
   dateEl.required = false;
   startDateEl.required = true;
+  modeHelpEl.textContent =
+    "Récurrence : ce rendez-vous apparaît automatiquement sur les jours choisis.";
 
   if (frequency === "weekly") {
     weekdayPickerEl.classList.remove("hidden");
+    weekdayInputs.forEach((input) => {
+      input.disabled = false;
+    });
   } else {
     weekdayPickerEl.classList.add("hidden");
+    weekdayInputs.forEach((input) => {
+      input.checked = false;
+      input.disabled = true;
+    });
   }
 }
 
@@ -318,11 +357,24 @@ function bindForm() {
   const modeEl = document.getElementById("appointment-mode");
   const frequencyEl = document.getElementById("recurrence-frequency");
   const startDateEl = document.getElementById("appointment-start-date");
+  const endDateEl = document.getElementById("appointment-end-date");
   const dateEl = document.getElementById("appointment-date");
 
   const today = getTodayDateValue();
   startDateEl.value = today;
   dateEl.value = today;
+  startDateEl.min = today;
+  endDateEl.min = today;
+  dateEl.min = today;
+
+  startDateEl.addEventListener("change", () => {
+    const startDateValue = String(startDateEl.value || "").trim();
+    endDateEl.min = startDateValue || today;
+
+    if (endDateEl.value && endDateEl.value < endDateEl.min) {
+      endDateEl.value = endDateEl.min;
+    }
+  });
 
   modeEl.addEventListener("change", updateModeVisibility);
   frequencyEl.addEventListener("change", updateModeVisibility);
@@ -361,7 +413,7 @@ function bindForm() {
         durationMinutes: Math.round(durationMinutes),
       });
       saveSchedule();
-      setStatus("Rendez-vous ponctuel enregistre.");
+      setStatus("Rendez-vous ponctuel enregistré.");
       formEl.reset();
       startDateEl.value = today;
       dateEl.value = today;
@@ -377,15 +429,21 @@ function bindForm() {
       .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
 
     if (!startDate) {
-      setStatus("Choisissez une date de debut.", true);
+      setStatus("Choisissez une date de début.", true);
       return;
     }
     if (endDate && endDate < startDate) {
-      setStatus("La date de fin doit etre apres la date de debut.", true);
+      setStatus("La date de fin doit être après la date de début.", true);
       return;
     }
     if (frequency === "weekly" && weekdays.length === 0) {
-      setStatus("Choisissez au moins un jour pour la recurrence hebdomadaire.", true);
+      const startDateObj = parseDayKeyToDate(startDate);
+      if (startDateObj) {
+        weekdays.push(startDateObj.getDay());
+      }
+    }
+    if (frequency === "weekly" && weekdays.length === 0) {
+      setStatus("Choisissez au moins un jour pour la récurrence hebdomadaire.", true);
       return;
     }
 
@@ -401,7 +459,7 @@ function bindForm() {
     });
     saveRecurringRules();
     renderRulesList();
-    setStatus("Rendez-vous recurrent enregistre.");
+    setStatus("Rendez-vous en récurrence enregistré.");
 
     formEl.reset();
     modeEl.value = "one-shot";
@@ -417,6 +475,7 @@ function initApp() {
   initPocketBase(localStorage.getItem(PB_URL_KEY));
   bindForm();
   renderRulesList();
+  setStatus("Prêt : ajoutez votre prochain rendez-vous.");
 }
 
 initApp();

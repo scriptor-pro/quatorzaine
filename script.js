@@ -377,7 +377,7 @@ function initPocketBase(url) {
 
 async function getSnapshotRecord(createIfMissing = false) {
   if (!isCloudConnected()) {
-    throw new Error("Non connecte a PocketBase");
+    throw new Error("Non connecté à PocketBase");
   }
 
   const userId = pocketbase.authStore.model.id;
@@ -402,7 +402,7 @@ async function getSnapshotRecord(createIfMissing = false) {
 
 async function pullFromCloud(silent = false) {
   if (!isCloudConnected()) {
-    setCloudStatus("Connectez-vous d'abord a PocketBase.", true);
+    setCloudStatus("Connectez-vous d'abord à PocketBase.", true);
     return;
   }
 
@@ -410,7 +410,7 @@ async function pullFromCloud(silent = false) {
     const record = await getSnapshotRecord(false);
     if (!record) {
       if (!silent) {
-        setCloudStatus("Aucun snapshot cloud trouve. Rien a telecharger.");
+        setCloudStatus("Aucun snapshot cloud trouvé. Rien à télécharger.");
       }
       return;
     }
@@ -423,17 +423,17 @@ async function pullFromCloud(silent = false) {
     render();
 
     if (!silent) {
-      setCloudStatus("Donnees cloud telechargees vers cet appareil.");
+      setCloudStatus("Données cloud téléchargées vers cet appareil.");
     }
   } catch (error) {
-    setCloudStatus(`Echec du telechargement cloud: ${error.message}`, true);
+    setCloudStatus(`Échec du téléchargement cloud: ${error.message}`, true);
   }
 }
 
 async function pushToCloud(silent = false) {
   if (!isCloudConnected()) {
     if (!silent) {
-      setCloudStatus("Connectez-vous d'abord a PocketBase.", true);
+      setCloudStatus("Connectez-vous d'abord à PocketBase.", true);
     }
     return;
   }
@@ -452,10 +452,10 @@ async function pushToCloud(silent = false) {
     }
 
     if (!silent) {
-      setCloudStatus("Donnees locales envoyees vers PocketBase.");
+      setCloudStatus("Données locales envoyées vers PocketBase.");
     }
   } catch (error) {
-    setCloudStatus(`Echec de l'envoi cloud: ${error.message}`, true);
+    setCloudStatus(`Échec de l'envoi cloud: ${error.message}`, true);
   }
 }
 
@@ -478,7 +478,7 @@ function promptMoveTargetDay(fromDayKey) {
     .map((day, index) => `${index + 1}. ${day.dayName} ${day.dateLabel}`)
     .join("\n");
   const answer = window.prompt(
-    `Deplacer cette tache vers quel jour ?\n${options}`,
+    `Déplacer cette tâche vers quel jour ?\n${options}`,
     "1",
   );
 
@@ -591,8 +591,8 @@ function createTaskElement(dayKeyValue, task) {
   const moveBtn = document.createElement("button");
   moveBtn.className = "task-move";
   moveBtn.type = "button";
-  moveBtn.textContent = "Deplacer";
-  moveBtn.setAttribute("aria-label", "Deplacer la tache vers un autre jour");
+  moveBtn.textContent = "Déplacer";
+  moveBtn.setAttribute("aria-label", "Déplacer la tâche vers un autre jour");
   moveBtn.addEventListener("click", () => {
     const targetDayKey = promptMoveTargetDay(dayKeyValue);
     if (!targetDayKey) {
@@ -624,12 +624,12 @@ function createTaskElement(dayKeyValue, task) {
   deleteBtn.setAttribute(
     "aria-label",
     task.done
-      ? "Supprimer la tache"
-      : "Terminez la tache pour activer la suppression",
+      ? "Supprimer la tâche"
+      : "Terminez la tâche pour activer la suppression",
   );
   deleteBtn.title = task.done
-    ? "Supprimer la tache"
-    : "Terminez la tache pour pouvoir la supprimer";
+    ? "Supprimer la tâche"
+    : "Terminez la tâche pour pouvoir la supprimer";
   deleteBtn.addEventListener("click", () => {
     if (!task.done) {
       return;
@@ -675,24 +675,28 @@ function createAppointmentElement(dayKeyValue, appointment) {
 
   const duration = document.createElement("span");
   duration.className = "appointment-duration";
-  const durationLabel = formatDuration(appointment.durationMinutes);
-  duration.textContent = appointment.isRecurring
-    ? `${durationLabel} Recurrence`
-    : durationLabel;
+  duration.textContent = formatDuration(appointment.durationMinutes);
 
   topLine.append(time, duration);
+  if (appointment.isRecurring) {
+    const badge = document.createElement("span");
+    badge.className = "appointment-badge";
+    badge.textContent = "Récurrence";
+    topLine.append(badge);
+  }
   main.append(topLine, text);
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
   deleteBtn.type = "button";
   if (appointment.isRecurring) {
-    deleteBtn.textContent = "...";
-    deleteBtn.title = "Gerez les recurrents dans la page Rendez-vous";
+    deleteBtn.textContent = "Gérer";
+    deleteBtn.title = "Gérez les récurrences dans la page Rendez-vous";
     deleteBtn.setAttribute(
       "aria-label",
-      "Gerer les rendez-vous recurrents depuis la page Rendez-vous",
+      "Gérer les rendez-vous en récurrence depuis la page Rendez-vous",
     );
+    deleteBtn.classList.add("recurring-manage");
   } else {
     deleteBtn.textContent = "x";
     deleteBtn.setAttribute("aria-label", "Supprimer le rendez-vous");
@@ -781,7 +785,7 @@ function createDayCard(day) {
   } else {
     const empty = document.createElement("li");
     empty.className = "empty-marker";
-    empty.innerHTML = '<span class="visually-hidden">Aucune tache</span>';
+    empty.innerHTML = '<span class="visually-hidden">Aucune tâche</span>';
     taskList.append(empty);
   }
 
@@ -789,8 +793,8 @@ function createDayCard(day) {
   taskForm.className = "inline-form task-form";
   const taskInputId = `task-input-${day.key}`;
   taskForm.innerHTML = `
-    <label class="visually-hidden" for="${taskInputId}">Nouvelle tache pour ${day.dayName} ${day.dateLabel}</label>
-    <input id="${taskInputId}" name="taskText" type="text" placeholder="Nouvelle tache" required>
+    <label class="visually-hidden" for="${taskInputId}">Nouvelle tâche pour ${day.dayName} ${day.dateLabel}</label>
+    <input id="${taskInputId}" name="taskText" type="text" placeholder="Nouvelle tâche" required>
     <button type="submit">Ajouter</button>
   `;
   taskForm.addEventListener("submit", (event) => {
@@ -838,7 +842,7 @@ function createDayCard(day) {
       <input id="${timeInputId}" name="appointmentTime" type="time" required>
     </div>
     <div class="field-group appointment-duration-group">
-      <label class="field-label" for="${durationInputId}">Duree (min)</label>
+      <label class="field-label" for="${durationInputId}">Durée (min)</label>
       <input id="${durationInputId}" name="appointmentDuration" type="number" min="5" step="5" value="60" required>
     </div>
     <button type="submit">Fixer</button>
@@ -890,7 +894,7 @@ function handleLogout() {
     pocketbase.authStore.clear();
   }
 
-  if (window.confirm("Effacer aussi les donnees locales de cet appareil ?")) {
+  if (window.confirm("Effacer aussi les données locales de cet appareil ?")) {
     localStorage.removeItem(STORAGE_KEY);
   }
 

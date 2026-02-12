@@ -298,6 +298,15 @@ ul {
   white-space: nowrap;
 }
 
+.appointment-badge {
+  border: 1px dashed #9a864f;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  color: #755f28;
+  background: #fff8e8;
+}
+
 .task-list.drag-target {
   outline: 2px dashed var(--accent);
   outline-offset: 4px;
@@ -411,6 +420,13 @@ button.delete {
   color: var(--danger);
   border-color: transparent;
   min-width: 44px;
+}
+
+button.delete.recurring-manage {
+  color: #1a3f9c;
+  border-color: #c7d5ff;
+  background: #eef3ff;
+  min-width: 74px;
 }
 
 .task-move {
