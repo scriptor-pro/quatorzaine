@@ -774,7 +774,7 @@ function createAppointmentElement(dayKeyValue, appointment) {
   deleteBtn.className = "delete";
   deleteBtn.type = "button";
   if (appointment.isRecurring) {
-    deleteBtn.textContent = "Gérer";
+    deleteBtn.textContent = "✏️";
     deleteBtn.title = "Gérez les récurrences dans la page Rendez-vous";
     deleteBtn.setAttribute(
       "aria-label",
