@@ -101,6 +101,15 @@
   gap: 8px;
 }
 
+.upcoming-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .rule-item {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -112,7 +121,23 @@
   align-items: center;
 }
 
+.upcoming-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
 .rule-item.empty {
+  color: var(--muted);
+  justify-content: flex-start;
+}
+
+.upcoming-item.empty {
   color: var(--muted);
   justify-content: flex-start;
 }

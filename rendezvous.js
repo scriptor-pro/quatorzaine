@@ -322,6 +322,86 @@ function formatRule(rule) {
   return `${labels.join(", ")} a ${rule.time} (${rule.durationMinutes} min)`;
 }
 
+function isDateInCurrentWindow(dateKey) {
+  return schedule.some((day) => day.key === dateKey);
+}
+
+function formatUpcomingDate(dateKey) {
+  const date = parseDayKeyToDate(dateKey);
+  if (!date) {
+    return dateKey;
+  }
+
+  return date.toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function renderUpcomingAppointments() {
+  const listEl = document.getElementById("upcoming-list");
+  const summaryEl = document.getElementById("upcoming-summary");
+  listEl.innerHTML = "";
+
+  const upcoming = detachedAppointments
+    .filter((appointment) => !isDateInCurrentWindow(appointment.date))
+    .slice()
+    .sort((a, b) => {
+      if (a.date !== b.date) {
+        return a.date.localeCompare(b.date);
+      }
+      return a.time.localeCompare(b.time);
+    });
+
+  summaryEl.textContent =
+    upcoming.length === 0
+      ? "Aucun rendez-vous ponctuel hors quatorzaine."
+      : `${upcoming.length} rendez-vous ponctuel(s) à venir.`;
+
+  if (upcoming.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "upcoming-item empty";
+    empty.textContent =
+      "Ajoutez un rendez-vous ponctuel hors quatorzaine pour l'afficher ici.";
+    listEl.append(empty);
+    return;
+  }
+
+  upcoming.forEach((appointment) => {
+    const item = document.createElement("li");
+    item.className = "upcoming-item";
+
+    const text = document.createElement("div");
+    text.className = "rule-text";
+
+    const title = document.createElement("strong");
+    title.textContent = appointment.text;
+
+    const subtitle = document.createElement("span");
+    subtitle.textContent = `${formatUpcomingDate(appointment.date)} à ${appointment.time} (${appointment.durationMinutes} min)`;
+
+    text.append(title, subtitle);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "rule-delete";
+    deleteBtn.textContent = "Supprimer";
+    deleteBtn.addEventListener("click", () => {
+      detachedAppointments = detachedAppointments.filter(
+        (candidate) => candidate.id !== appointment.id,
+      );
+      saveDetachedAppointments();
+      renderUpcomingAppointments();
+      setStatus("Rendez-vous à venir supprimé.");
+    });
+
+    item.append(text, deleteBtn);
+    listEl.append(item);
+  });
+}
+
 function renderRulesList() {
   const listEl = document.getElementById("rules-list");
   const summaryEl = document.getElementById("rules-summary");
@@ -564,6 +644,7 @@ function bindForm() {
         setStatus(
           "Rendez-vous ponctuel enregistré hors quatorzaine. Il apparaîtra au bon moment.",
         );
+        renderUpcomingAppointments();
       }
       resetAppointmentFormToCreateMode();
       return;
@@ -633,6 +714,7 @@ function initApp() {
   initPocketBase(localStorage.getItem(PB_URL_KEY));
   bindForm();
   renderRulesList();
+  renderUpcomingAppointments();
   setStatus("Prêt : ajoutez votre prochain rendez-vous.");
 }
 
