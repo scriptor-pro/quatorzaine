@@ -84,6 +84,106 @@ function createRankedRows(schedule) {
   return rows.slice(0, 10);
 }
 
+function getDailyDoneRows(schedule) {
+  return schedule
+    .map((day) => ({
+      date: parseDayKeyToDate(day.key),
+      finishedCount: getFinishedTaskCount(day),
+    }))
+    .filter((row) => !!row.date)
+    .sort((a, b) => a.date - b.date);
+}
+
+function findLongestDoneStreak(schedule) {
+  const rows = getDailyDoneRows(schedule);
+
+  let bestLength = 0;
+  let bestStart = null;
+  let bestEnd = null;
+
+  let currentLength = 0;
+  let currentStart = null;
+  let currentEnd = null;
+  let previousDate = null;
+
+  rows.forEach((row) => {
+    const hasDoneTask = row.finishedCount > 0;
+    if (!hasDoneTask) {
+      currentLength = 0;
+      currentStart = null;
+      currentEnd = null;
+      previousDate = row.date;
+      return;
+    }
+
+    const isConsecutive =
+      previousDate &&
+      utcDayNumber(row.date) - utcDayNumber(previousDate) === 1 &&
+      currentLength > 0;
+
+    if (isConsecutive) {
+      currentLength += 1;
+      currentEnd = row.date;
+    } else {
+      currentLength = 1;
+      currentStart = row.date;
+      currentEnd = row.date;
+    }
+
+    if (currentLength > bestLength) {
+      bestLength = currentLength;
+      bestStart = currentStart;
+      bestEnd = currentEnd;
+    }
+
+    previousDate = row.date;
+  });
+
+  return {
+    length: bestLength,
+    startDate: bestStart,
+    endDate: bestEnd,
+  };
+}
+
+function findCurrentDoneStreak(schedule) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayNumber = utcDayNumber(today);
+
+  const doneByDayNumber = new Map(
+    getDailyDoneRows(schedule).map((row) => [
+      utcDayNumber(row.date),
+      row.finishedCount > 0,
+    ]),
+  );
+
+  let length = 0;
+  let cursor = todayNumber;
+  while (doneByDayNumber.get(cursor)) {
+    length += 1;
+    cursor -= 1;
+  }
+
+  if (length === 0) {
+    return {
+      length: 0,
+      startDate: null,
+      endDate: null,
+    };
+  }
+
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - (length - 1));
+  startDate.setHours(0, 0, 0, 0);
+
+  return {
+    length,
+    startDate,
+    endDate: today,
+  };
+}
+
 function formatDateLabel(date) {
   if (!date) {
     return "Date inconnue";
@@ -96,11 +196,44 @@ function formatDateLabel(date) {
   });
 }
 
+function utcDayNumber(date) {
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
+}
+
 function renderStats() {
   const summaryEl = document.getElementById("stats-summary");
   const listEl = document.getElementById("stats-list");
+  const streakValueEl = document.getElementById("streak-value");
+  const streakRangeEl = document.getElementById("streak-range");
+  const currentStreakValueEl = document.getElementById("current-streak-value");
+  const currentStreakRangeEl = document.getElementById("current-streak-range");
   const schedule = loadSchedule();
   const rows = createRankedRows(schedule);
+  const streak = findLongestDoneStreak(schedule);
+  const currentStreak = findCurrentDoneStreak(schedule);
+
+  if (streak.length === 0) {
+    streakValueEl.textContent = "0 jour actif";
+    streakRangeEl.textContent = "Terminez au moins une tâche pour démarrer une série.";
+  } else {
+    streakValueEl.textContent =
+      streak.length === 1
+        ? "1 jour actif consécutif"
+        : `${streak.length} jours actifs consécutifs`;
+    streakRangeEl.textContent = `Du ${formatDateLabel(streak.startDate)} au ${formatDateLabel(streak.endDate)}.`;
+  }
+
+  if (currentStreak.length === 0) {
+    currentStreakValueEl.textContent = "0 jour actif";
+    currentStreakRangeEl.textContent =
+      "Terminez au moins une tâche aujourd'hui pour démarrer la série en cours.";
+  } else {
+    currentStreakValueEl.textContent =
+      currentStreak.length === 1
+        ? "1 jour actif consécutif"
+        : `${currentStreak.length} jours actifs consécutifs`;
+    currentStreakRangeEl.textContent = `Du ${formatDateLabel(currentStreak.startDate)} à aujourd'hui.`;
+  }
 
   listEl.innerHTML = "";
 

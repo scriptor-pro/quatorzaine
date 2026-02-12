@@ -41,6 +41,21 @@
 
       <section class="stats-panel" aria-label="Classement des jours">
         <h2>Classement</h2>
+        <article class="streak-card" aria-label="Plus longue série de jours actifs">
+          <h3>Séries de jours actifs</h3>
+          <div class="streak-grid">
+            <section class="streak-metric" aria-label="Plus longue série">
+              <h4>Plus longue série</h4>
+              <p id="streak-value" class="streak-value"></p>
+              <p id="streak-range" class="streak-range"></p>
+            </section>
+            <section class="streak-metric" aria-label="Série en cours">
+              <h4>Série en cours</h4>
+              <p id="current-streak-value" class="streak-value"></p>
+              <p id="current-streak-range" class="streak-range"></p>
+            </section>
+          </div>
+        </article>
         <p id="stats-summary" class="planner-status" role="status" aria-live="polite"></p>
         <ol id="stats-list" class="stats-list"></ol>
       </section>
