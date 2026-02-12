@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Calendrier 14">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f3f3f3" />
+    </linearGradient>
+    <linearGradient id="topbar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff6b6b" />
+      <stop offset="100%" stop-color="#e04848" />
+    </linearGradient>
+  </defs>
+
+  <rect x="28" y="30" width="200" height="202" rx="24" fill="#000000" opacity="0.16" />
+  <rect x="28" y="24" width="200" height="208" rx="24" fill="url(#paper)" stroke="#000000" stroke-width="4" />
+  <rect x="28" y="24" width="200" height="54" rx="24" fill="url(#topbar)" />
+  <rect x="28" y="54" width="200" height="24" fill="url(#topbar)" />
+  <rect x="34" y="78" width="188" height="148" fill="none" stroke="#000000" stroke-width="2" />
+
+  <rect x="72" y="10" width="16" height="34" rx="8" fill="#f7f7f7" stroke="#cccccc" stroke-width="3" />
+  <rect x="168" y="10" width="16" height="34" rx="8" fill="#f7f7f7" stroke="#cccccc" stroke-width="3" />
+
+  <text x="111" y="176" text-anchor="middle" font-size="98" font-weight="800" font-family="'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI',sans-serif" fill="#222222">1</text>
+  <text x="149" y="176" text-anchor="middle" font-size="98" font-weight="800" font-family="'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI',sans-serif" fill="#222222">4</text>
+</svg>
