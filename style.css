@@ -59,14 +59,23 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 999px;
   text-decoration: none;
-  color: var(--text);
-  border: 1px solid var(--line);
+  color: #2a2118;
+  border: 1px solid #8f7f63;
   background: #fff;
   font-weight: 600;
+}
+
+.app-nav-link:hover {
+  background: #f9f5ec;
+}
+
+.app-nav-link:focus-visible {
+  outline: 3px solid #002fa7;
+  outline-offset: 2px;
 }
 
 .nav-icon {
@@ -74,17 +83,18 @@ h1 {
 }
 
 .nav-icon-planner {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1rem;
+  height: 1rem;
   display: inline-block;
   object-fit: contain;
-  border-radius: 3px;
+  border-radius: 2px;
+  vertical-align: middle;
 }
 
 .app-nav-link.active {
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 40%, #ffffff);
-  color: #173279;
+  background: #dfe7ff;
+  border-color: #3554a6;
+  color: #102a6f;
 }
 
 .planner-toolbar {
