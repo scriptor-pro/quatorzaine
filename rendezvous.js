@@ -15,6 +15,7 @@ const DAY_NAMES = [
 
 let schedule = [];
 let recurringRules = [];
+let editingRecurringRuleId = null;
 let pocketbase = null;
 let cloudSaveTimer = null;
 
@@ -298,15 +299,91 @@ function renderRulesList() {
     deleteBtn.className = "rule-delete";
     deleteBtn.textContent = "Supprimer";
     deleteBtn.addEventListener("click", () => {
+      if (editingRecurringRuleId === rule.id) {
+        resetAppointmentFormToCreateMode();
+      }
       recurringRules = recurringRules.filter((candidate) => candidate.id !== rule.id);
       saveRecurringRules();
       renderRulesList();
       setStatus("Rendez-vous en récurrence supprimé.");
     });
 
-    item.append(text, deleteBtn);
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "rule-edit";
+    editBtn.textContent = "Modifier";
+    editBtn.addEventListener("click", () => {
+      beginRecurringEdit(rule.id);
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "rule-actions";
+    actions.append(editBtn, deleteBtn);
+
+    item.append(text, actions);
     listEl.append(item);
   });
+}
+
+function resetAppointmentFormToCreateMode() {
+  const formEl = document.getElementById("appointment-form");
+  const modeEl = document.getElementById("appointment-mode");
+  const startDateEl = document.getElementById("appointment-start-date");
+  const endDateEl = document.getElementById("appointment-end-date");
+  const dateEl = document.getElementById("appointment-date");
+  const submitBtnEl = document.getElementById("appointment-submit");
+  const cancelBtnEl = document.getElementById("appointment-cancel");
+
+  const today = getTodayDateValue();
+  editingRecurringRuleId = null;
+  formEl.reset();
+  modeEl.value = "one-shot";
+  startDateEl.value = today;
+  endDateEl.value = "";
+  dateEl.value = today;
+  submitBtnEl.textContent = "Enregistrer";
+  cancelBtnEl.classList.add("hidden");
+  updateModeVisibility();
+}
+
+function beginRecurringEdit(ruleId) {
+  const rule = recurringRules.find((candidate) => candidate.id === ruleId);
+  if (!rule) {
+    return;
+  }
+
+  const modeEl = document.getElementById("appointment-mode");
+  const textEl = document.getElementById("appointment-text");
+  const timeEl = document.getElementById("appointment-time");
+  const durationEl = document.getElementById("appointment-duration");
+  const startDateEl = document.getElementById("appointment-start-date");
+  const endDateEl = document.getElementById("appointment-end-date");
+  const frequencyEl = document.getElementById("recurrence-frequency");
+  const submitBtnEl = document.getElementById("appointment-submit");
+  const cancelBtnEl = document.getElementById("appointment-cancel");
+  const weekdayInputs = document.querySelectorAll('input[name="weekday"]');
+
+  editingRecurringRuleId = rule.id;
+  modeEl.value = "recurring";
+  textEl.value = rule.text;
+  timeEl.value = rule.time;
+  durationEl.value = String(rule.durationMinutes);
+  startDateEl.value = rule.startDate;
+  endDateEl.value = rule.endDate || "";
+  frequencyEl.value = rule.frequency;
+
+  weekdayInputs.forEach((input) => {
+    const day = Number(input.value);
+    input.checked = rule.weekdays.includes(day);
+  });
+
+  submitBtnEl.textContent = "Mettre à jour";
+  cancelBtnEl.classList.remove("hidden");
+  updateModeVisibility();
+
+  textEl.focus();
+  textEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  setStatus("Modification d'une récurrence en cours.");
 }
 
 function updateModeVisibility() {
@@ -359,6 +436,7 @@ function bindForm() {
   const startDateEl = document.getElementById("appointment-start-date");
   const endDateEl = document.getElementById("appointment-end-date");
   const dateEl = document.getElementById("appointment-date");
+  const cancelBtnEl = document.getElementById("appointment-cancel");
 
   const today = getTodayDateValue();
   startDateEl.value = today;
@@ -378,6 +456,10 @@ function bindForm() {
 
   modeEl.addEventListener("change", updateModeVisibility);
   frequencyEl.addEventListener("change", updateModeVisibility);
+  cancelBtnEl.addEventListener("click", () => {
+    resetAppointmentFormToCreateMode();
+    setStatus("Modification annulée.");
+  });
   updateModeVisibility();
 
   formEl.addEventListener("submit", (event) => {
@@ -396,6 +478,7 @@ function bindForm() {
     }
 
     if (mode === "one-shot") {
+      editingRecurringRuleId = null;
       const date = String(formData.get("date") || "").trim();
       const day = schedule.find((candidate) => candidate.key === date);
       if (!day) {
@@ -414,10 +497,7 @@ function bindForm() {
       });
       saveSchedule();
       setStatus("Rendez-vous ponctuel enregistré.");
-      formEl.reset();
-      startDateEl.value = today;
-      dateEl.value = today;
-      updateModeVisibility();
+      resetAppointmentFormToCreateMode();
       return;
     }
 
@@ -447,8 +527,8 @@ function bindForm() {
       return;
     }
 
-    recurringRules.push({
-      id: makeId(),
+    const nextRule = {
+      id: editingRecurringRuleId || makeId(),
       text,
       time,
       durationMinutes: Math.round(durationMinutes),
@@ -456,16 +536,25 @@ function bindForm() {
       startDate,
       endDate,
       weekdays,
-    });
+    };
+
+    if (editingRecurringRuleId) {
+      recurringRules = recurringRules.map((rule) =>
+        rule.id === editingRecurringRuleId ? nextRule : rule,
+      );
+    } else {
+      recurringRules.push(nextRule);
+    }
+
     saveRecurringRules();
     renderRulesList();
-    setStatus("Rendez-vous en récurrence enregistré.");
-
-    formEl.reset();
-    modeEl.value = "one-shot";
-    startDateEl.value = today;
-    dateEl.value = today;
-    updateModeVisibility();
+    const wasEditing = !!editingRecurringRuleId;
+    resetAppointmentFormToCreateMode();
+    setStatus(
+      wasEditing
+        ? "Récurrence modifiée avec succès."
+        : "Rendez-vous en récurrence enregistré.",
+    );
   });
 }
 

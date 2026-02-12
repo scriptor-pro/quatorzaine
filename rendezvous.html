@@ -99,7 +99,12 @@
             <label><input type="checkbox" name="weekday" value="0" /> Dim</label>
           </fieldset>
 
-          <button type="submit" class="full">Enregistrer</button>
+          <div class="form-actions full">
+            <button id="appointment-submit" type="submit">Enregistrer</button>
+            <button id="appointment-cancel" type="button" class="ghost hidden">
+              Annuler la modification
+            </button>
+          </div>
         </form>
         <p id="appointment-status" class="planner-status" role="status" aria-live="polite"></p>
       </section>

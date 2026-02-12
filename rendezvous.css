@@ -27,6 +27,16 @@
   grid-column: 1 / -1;
 }
 
+.form-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.form-actions button {
+  flex: 1 1 220px;
+}
+
 .appointment-entry-form .field-group {
   display: flex;
   flex-direction: column;
@@ -124,6 +134,18 @@
 
 .rule-delete {
   min-width: 44px;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rule-edit {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line);
 }
 
 @media (max-width: 720px) {

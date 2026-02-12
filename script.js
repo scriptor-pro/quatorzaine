@@ -681,7 +681,9 @@ function createAppointmentElement(dayKeyValue, appointment) {
   if (appointment.isRecurring) {
     const badge = document.createElement("span");
     badge.className = "appointment-badge";
-    badge.textContent = "Récurrence";
+    badge.textContent = "⟳";
+    badge.title = "Récurrence";
+    badge.setAttribute("aria-label", "Récurrence");
     topLine.append(badge);
   }
   main.append(topLine, text);
