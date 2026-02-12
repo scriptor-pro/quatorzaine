@@ -1,4 +1,5 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
+const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DAY_COUNT = 14;
 const DAY_NAMES = [
   "Dimanche",
@@ -14,6 +15,7 @@ const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
 
 let schedule = [];
+let recurringRules = [];
 let pocketbase = null;
 let cloudSaveTimer = null;
 
@@ -150,37 +152,92 @@ function normalizeSchedule(raw) {
   return normalized;
 }
 
-function parseCloudScheduleValue(rawValue) {
+function normalizeRecurringRules(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((rule) => {
+      if (!rule || typeof rule !== "object") {
+        return null;
+      }
+
+      const frequency =
+        rule.frequency === "daily" || rule.frequency === "weekly"
+          ? rule.frequency
+          : null;
+      if (!frequency) {
+        return null;
+      }
+
+      const weekdays = Array.isArray(rule.weekdays)
+        ? rule.weekdays
+            .map((value) => Number(value))
+            .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)
+        : [];
+
+      return {
+        id: typeof rule.id === "string" && rule.id ? rule.id : makeId(),
+        text: String(rule.text || "").trim(),
+        time: String(rule.time || "").trim(),
+        durationMinutes: Math.max(1, Math.round(Number(rule.durationMinutes) || 0)),
+        frequency,
+        startDate: String(rule.startDate || "").trim(),
+        endDate: String(rule.endDate || "").trim(),
+        weekdays,
+      };
+    })
+    .filter((rule) => {
+      if (!rule) {
+        return false;
+      }
+      if (!rule.text || !rule.time || !rule.startDate) {
+        return false;
+      }
+      if (rule.frequency === "weekly" && rule.weekdays.length === 0) {
+        return false;
+      }
+      return true;
+    });
+}
+
+function parseCloudSnapshot(rawValue) {
   if (typeof rawValue === "string") {
     const text = rawValue.trim();
     if (!text) {
-      return [];
+      return { schedule: [], recurringRules: [] };
     }
 
     try {
       const parsed = JSON.parse(text);
       if (typeof parsed === "string") {
         try {
-          return JSON.parse(parsed);
+          return parseCloudSnapshot(parsed);
         } catch (_doubleEncodedError) {
-          return [];
+          return { schedule: [], recurringRules: [] };
         }
       }
-      return parsed;
+      return parseCloudSnapshot(parsed);
     } catch (_invalidJsonError) {
-      return [];
+      return { schedule: [], recurringRules: [] };
     }
   }
 
   if (Array.isArray(rawValue)) {
-    return rawValue;
+    return { schedule: rawValue, recurringRules: [] };
   }
 
   if (rawValue && typeof rawValue === "object") {
-    return rawValue;
+    return {
+      schedule: Array.isArray(rawValue.schedule) ? rawValue.schedule : [],
+      recurringRules: Array.isArray(rawValue.recurringRules)
+        ? rawValue.recurringRules
+        : [],
+    };
   }
 
-  return [];
+  return { schedule: [], recurringRules: [] };
 }
 
 function loadSchedule() {
@@ -196,9 +253,34 @@ function loadSchedule() {
   }
 }
 
+function loadRecurringRules() {
+  const savedRaw = localStorage.getItem(RECURRING_STORAGE_KEY);
+  if (!savedRaw) {
+    return [];
+  }
+
+  try {
+    return normalizeRecurringRules(JSON.parse(savedRaw));
+  } catch (_error) {
+    return [];
+  }
+}
+
 function saveSchedule() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
   queueCloudSave();
+}
+
+function saveRecurringRules() {
+  localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
+  queueCloudSave();
+}
+
+function serializeSnapshot() {
+  return JSON.stringify({
+    schedule,
+    recurringRules,
+  });
 }
 
 function makeId() {
@@ -314,7 +396,7 @@ async function getSnapshotRecord(createIfMissing = false) {
 
   return pocketbase.collection(PB_COLLECTION).create({
     owner: userId,
-    schedule: JSON.stringify(schedule),
+    schedule: serializeSnapshot(),
   });
 }
 
@@ -333,9 +415,11 @@ async function pullFromCloud(silent = false) {
       return;
     }
 
-    const parsed = parseCloudScheduleValue(record.schedule);
-    schedule = normalizeSchedule(parsed);
+    const snapshot = parseCloudSnapshot(record.schedule);
+    schedule = normalizeSchedule(snapshot.schedule);
+    recurringRules = normalizeRecurringRules(snapshot.recurringRules);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+    localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
     render();
 
     if (!silent) {
@@ -356,7 +440,7 @@ async function pushToCloud(silent = false) {
 
   try {
     const record = await getSnapshotRecord(false);
-    const payload = { schedule: JSON.stringify(schedule) };
+    const payload = { schedule: serializeSnapshot() };
 
     if (record) {
       await pocketbase.collection(PB_COLLECTION).update(record.id, payload);
@@ -413,6 +497,52 @@ function promptMoveTargetDay(fromDayKey) {
   }
 
   return target.key;
+}
+
+function ruleAppliesToDay(rule, day) {
+  const dayDate = dayKeyToDate(day.key);
+  const startDate = dayKeyToDate(rule.startDate);
+  const endDate = rule.endDate ? dayKeyToDate(rule.endDate) : null;
+  if (!dayDate || !startDate) {
+    return false;
+  }
+  if (dayDate < startDate) {
+    return false;
+  }
+  if (endDate && dayDate > endDate) {
+    return false;
+  }
+
+  if (rule.frequency === "daily") {
+    return true;
+  }
+
+  return rule.weekdays.includes(day.weekdayIndex);
+}
+
+function getAppointmentsForDay(day) {
+  const oneShots = (day.appointments || []).map((appointment) => ({
+    ...appointment,
+    isRecurring: false,
+  }));
+
+  const recurringForDay = recurringRules
+    .filter((rule) => ruleAppliesToDay(rule, day))
+    .map((rule) => ({
+      id: `recurring-${rule.id}-${day.key}`,
+      text: rule.text,
+      time: rule.time,
+      durationMinutes: rule.durationMinutes,
+      isRecurring: true,
+    }));
+
+  return oneShots.concat(recurringForDay).sort((a, b) => {
+    const aTime = parseTimeToMinutes(a.time || "");
+    const bTime = parseTimeToMinutes(b.time || "");
+    const aValue = aTime === null ? Number.POSITIVE_INFINITY : aTime;
+    const bValue = bTime === null ? Number.POSITIVE_INFINITY : bTime;
+    return aValue - bValue;
+  });
 }
 
 function createTaskElement(dayKeyValue, task) {
@@ -518,6 +648,9 @@ function createTaskElement(dayKeyValue, task) {
 function createAppointmentElement(dayKeyValue, appointment) {
   const li = document.createElement("li");
   li.className = "appointment-item";
+  if (appointment.isRecurring) {
+    li.classList.add("recurring");
+  }
 
   const main = document.createElement("div");
   main.className = "appointment-main";
@@ -542,7 +675,10 @@ function createAppointmentElement(dayKeyValue, appointment) {
 
   const duration = document.createElement("span");
   duration.className = "appointment-duration";
-  duration.textContent = formatDuration(appointment.durationMinutes);
+  const durationLabel = formatDuration(appointment.durationMinutes);
+  duration.textContent = appointment.isRecurring
+    ? `${durationLabel} Recurrence`
+    : durationLabel;
 
   topLine.append(time, duration);
   main.append(topLine, text);
@@ -550,9 +686,22 @@ function createAppointmentElement(dayKeyValue, appointment) {
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
   deleteBtn.type = "button";
-  deleteBtn.textContent = "x";
-  deleteBtn.setAttribute("aria-label", "Supprimer le rendez-vous");
+  if (appointment.isRecurring) {
+    deleteBtn.textContent = "...";
+    deleteBtn.title = "Gerez les recurrents dans la page Rendez-vous";
+    deleteBtn.setAttribute(
+      "aria-label",
+      "Gerer les rendez-vous recurrents depuis la page Rendez-vous",
+    );
+  } else {
+    deleteBtn.textContent = "x";
+    deleteBtn.setAttribute("aria-label", "Supprimer le rendez-vous");
+  }
   deleteBtn.addEventListener("click", () => {
+    if (appointment.isRecurring) {
+      window.location.href = "rendezvous.html";
+      return;
+    }
     const day = schedule.find((d) => d.key === dayKeyValue);
     day.appointments = day.appointments.filter((a) => a.id !== appointment.id);
     saveSchedule();
@@ -662,13 +811,11 @@ function createDayCard(day) {
   appointmentsSection.className = "section";
 
   const appointmentList = document.createElement("ul");
-  if (day.appointments.length > 0) {
-    day.appointments
-      .slice()
-      .sort((a, b) => a.time.localeCompare(b.time))
-      .forEach((appointment) => {
-        appointmentList.append(createAppointmentElement(day.key, appointment));
-      });
+  const dayAppointments = getAppointmentsForDay(day);
+  if (dayAppointments.length > 0) {
+    dayAppointments.forEach((appointment) => {
+      appointmentList.append(createAppointmentElement(day.key, appointment));
+    });
   } else {
     const empty = document.createElement("li");
     empty.className = "empty-marker";
@@ -793,6 +940,7 @@ async function initApp() {
   }
 
   schedule = loadSchedule();
+  recurringRules = loadRecurringRules();
   render();
   updateCloudButtons();
   setCloudStatus("Session cloud active. Synchronisation en cours...");

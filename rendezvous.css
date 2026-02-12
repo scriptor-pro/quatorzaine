@@ -1,0 +1,107 @@
+.rendezvous-shell {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.rendezvous-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(38, 29, 18, 0.08);
+  margin-bottom: 14px;
+}
+
+.rendezvous-panel h2 {
+  margin: 0 0 10px;
+  font-family: "Public Sans", "Segoe UI", sans-serif;
+}
+
+.appointment-entry-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.appointment-entry-form .full {
+  grid-column: 1 / -1;
+}
+
+.appointment-entry-form .field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appointment-entry-form fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 0;
+  padding: 8px;
+}
+
+.appointment-entry-form fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+}
+
+.appointment-entry-form legend {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.rules-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.rule-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rule-text strong {
+  font-size: 0.96rem;
+}
+
+.rule-text span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.rule-delete {
+  min-width: 44px;
+}
+
+@media (max-width: 720px) {
+  .appointment-entry-form {
+    grid-template-columns: 1fr;
+  }
+}

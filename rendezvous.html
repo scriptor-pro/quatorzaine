@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quatorzaine - Rendez-vous</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.bunny.net/css?family=manrope:400,500,700|public-sans:500,700"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="rendezvous.css" />
+  </head>
+  <body>
+    <main class="rendezvous-shell">
+      <h1>Rendez-vous</h1>
+      <p class="subtitle">Ajoutez un rendez-vous unique ou recurrent</p>
+      <nav class="app-nav" aria-label="Navigation principale">
+        <a class="app-nav-link" href="quatorzaine.html">Planner</a>
+        <a class="app-nav-link active" href="rendezvous.html" aria-current="page"
+          >Rendez-vous</a
+        >
+      </nav>
+
+      <section class="rendezvous-panel" aria-label="Nouveau rendez-vous">
+        <h2>Nouveau rendez-vous</h2>
+        <form id="appointment-form" class="appointment-entry-form">
+          <div class="field-group full">
+            <label for="appointment-text">Description</label>
+            <input
+              id="appointment-text"
+              name="text"
+              type="text"
+              placeholder="Ex: Revue de sprint"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="appointment-time">Heure</label>
+            <input id="appointment-time" name="time" type="time" required />
+          </div>
+
+          <div class="field-group">
+            <label for="appointment-duration">Duree (min)</label>
+            <input
+              id="appointment-duration"
+              name="duration"
+              type="number"
+              min="5"
+              step="5"
+              value="60"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="appointment-mode">Type</label>
+            <select id="appointment-mode" name="mode">
+              <option value="one-shot">Ponctuel</option>
+              <option value="recurring">Recurrent</option>
+            </select>
+          </div>
+
+          <div class="field-group recurring-only hidden">
+            <label for="appointment-start-date">Date de debut</label>
+            <input id="appointment-start-date" name="startDate" type="date" required />
+          </div>
+
+          <div class="field-group one-shot-only">
+            <label for="appointment-date">Date du rendez-vous</label>
+            <input id="appointment-date" name="date" type="date" required />
+          </div>
+
+          <div class="field-group recurring-only hidden">
+            <label for="recurrence-frequency">Frequence</label>
+            <select id="recurrence-frequency" name="frequency">
+              <option value="daily">Tous les jours</option>
+              <option value="weekly">Chaque semaine</option>
+            </select>
+          </div>
+
+          <div class="field-group recurring-only hidden">
+            <label for="appointment-end-date">Date de fin (optionnel)</label>
+            <input id="appointment-end-date" name="endDate" type="date" />
+          </div>
+
+          <fieldset class="field-group recurring-only weekday-picker hidden">
+            <legend>Jours de repetition (hebdomadaire)</legend>
+            <label><input type="checkbox" name="weekday" value="1" /> Lun</label>
+            <label><input type="checkbox" name="weekday" value="2" /> Mar</label>
+            <label><input type="checkbox" name="weekday" value="3" /> Mer</label>
+            <label><input type="checkbox" name="weekday" value="4" /> Jeu</label>
+            <label><input type="checkbox" name="weekday" value="5" /> Ven</label>
+            <label><input type="checkbox" name="weekday" value="6" /> Sam</label>
+            <label><input type="checkbox" name="weekday" value="0" /> Dim</label>
+          </fieldset>
+
+          <button type="submit" class="full">Enregistrer</button>
+        </form>
+        <p id="appointment-status" class="planner-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="rendezvous-panel" aria-label="Recurrents actifs">
+        <h2>Recurrents actifs</h2>
+        <ul id="rules-list" class="rules-list"></ul>
+      </section>
+    </main>
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/pocketbase@0.26.8/dist/pocketbase.umd.js"
+      integrity="sha384-ZI73uCTk/NcBsnKPHMGJVgeSDF0ZSNPYG0cGceGuVJ8h2nLLpeDwYOGrceksNOvM"
+      crossorigin="anonymous"
+    ></script>
+    <script defer src="rendezvous.js"></script>
+  </body>
+</html>

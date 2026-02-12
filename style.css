@@ -47,6 +47,33 @@ h1 {
   color: var(--muted);
 }
 
+.app-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+}
+
+.app-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: #fff;
+  font-weight: 600;
+}
+
+.app-nav-link.active {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, #ffffff);
+  color: #173279;
+}
+
 .planner-toolbar {
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -215,6 +242,10 @@ ul {
 
 .appointment-item {
   background: var(--appointment-bg);
+}
+
+.appointment-item.recurring {
+  border-style: dashed;
 }
 
 .task-main,
