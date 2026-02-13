@@ -103,10 +103,10 @@ h1 {
   border-radius: 14px;
   background: var(--panel);
   box-shadow: 0 8px 20px rgba(38, 29, 18, 0.06);
-  padding: 12px 14px;
-  margin-bottom: 16px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -115,13 +115,18 @@ h1 {
 .planner-status {
   margin: 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .toolbar-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+.toolbar-actions button {
+  min-height: 38px;
+  padding: 8px 12px;
 }
 
 .recurring-task-panel {
