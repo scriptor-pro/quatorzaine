@@ -123,6 +123,52 @@ function normalizeRecurringRules(raw) {
     .filter(Boolean);
 }
 
+function normalizeRecurringTaskRules(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((rule) => {
+      if (!rule || typeof rule !== "object") {
+        return null;
+      }
+
+      const frequency =
+        rule.frequency === "daily" || rule.frequency === "weekly"
+          ? rule.frequency
+          : null;
+      if (!frequency) {
+        return null;
+      }
+
+      const weekdays = Array.isArray(rule.weekdays)
+        ? rule.weekdays
+            .map((value) => Number(value))
+            .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)
+        : [];
+
+      const normalized = {
+        id: typeof rule.id === "string" && rule.id ? rule.id : makeId(),
+        text: String(rule.text || "").trim(),
+        frequency,
+        startDate: String(rule.startDate || "").trim(),
+        endDate: String(rule.endDate || "").trim(),
+        weekdays,
+      };
+
+      if (!normalized.text || !normalized.startDate) {
+        return null;
+      }
+      if (normalized.frequency === "weekly" && normalized.weekdays.length === 0) {
+        return null;
+      }
+
+      return normalized;
+    })
+    .filter(Boolean);
+}
+
 function normalizeDetachedAppointments(raw) {
   if (!Array.isArray(raw)) {
     return [];
@@ -421,6 +467,92 @@ function parseDayKeyToDate(value) {
   const date = new Date(year, month - 1, day);
   date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function recurringTaskId(ruleId, dayKeyValue) {
+  return `rec-task-${ruleId}-${dayKeyValue}`;
+}
+
+function taskRuleAppliesToDay(rule, day) {
+  const dayDate = parseDayKeyToDate(day.key);
+  const startDate = parseDayKeyToDate(rule.startDate);
+  const endDate = rule.endDate ? parseDayKeyToDate(rule.endDate) : null;
+  if (!dayDate || !startDate) {
+    return false;
+  }
+  if (dayDate < startDate) {
+    return false;
+  }
+  if (endDate && dayDate > endDate) {
+    return false;
+  }
+
+  if (rule.frequency === "daily") {
+    return true;
+  }
+
+  return rule.weekdays.includes(dayDate.getDay());
+}
+
+function syncRecurringTasksIntoSchedule(days, rules) {
+  if (!Array.isArray(days)) {
+    return;
+  }
+
+  const normalizedRules = normalizeRecurringTaskRules(rules);
+  const ruleById = new Map(normalizedRules.map((rule) => [rule.id, rule]));
+
+  days.forEach((day) => {
+    const tasks = Array.isArray(day.tasks) ? day.tasks : [];
+
+    let nextTasks = tasks.filter((task) => {
+      if (!task || !task.isRecurringOccurrence) {
+        return true;
+      }
+
+      const rule = ruleById.get(task.recurringRuleId);
+      if (!rule) {
+        return false;
+      }
+
+      if (task.recurringForDay !== day.key) {
+        return false;
+      }
+
+      return taskRuleAppliesToDay(rule, day);
+    });
+
+    normalizedRules.forEach((rule) => {
+      if (!taskRuleAppliesToDay(rule, day)) {
+        return;
+      }
+
+      const existing = nextTasks.find(
+        (task) =>
+          task &&
+          task.isRecurringOccurrence &&
+          task.recurringRuleId === rule.id &&
+          task.recurringForDay === day.key,
+      );
+
+      if (existing) {
+        existing.id = recurringTaskId(rule.id, day.key);
+        existing.text = rule.text;
+        return;
+      }
+
+      nextTasks.unshift({
+        id: recurringTaskId(rule.id, day.key),
+        text: rule.text,
+        done: false,
+        isRecurringOccurrence: true,
+        recurringRuleId: rule.id,
+        recurringForDay: day.key,
+      });
+    });
+
+    day.tasks = nextTasks;
+  });
 }
 
 function formatRule(rule) {

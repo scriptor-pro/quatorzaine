@@ -709,9 +709,15 @@ function isCloudConnected() {
 
 function updateCloudButtons() {
   const connected = isCloudConnected();
-  cloudPullBtnEl.disabled = !connected;
-  cloudPushBtnEl.disabled = !connected;
-  plannerLogoutBtnEl.disabled = !connected;
+  if (cloudPullBtnEl) {
+    cloudPullBtnEl.disabled = !connected;
+  }
+  if (cloudPushBtnEl) {
+    cloudPushBtnEl.disabled = !connected;
+  }
+  if (plannerLogoutBtnEl) {
+    plannerLogoutBtnEl.disabled = !connected;
+  }
 }
 
 function initPocketBase(url) {
@@ -943,9 +949,16 @@ function bindRecurringTaskControls() {
   recurringTaskFormEl = document.getElementById("recurring-task-form");
   recurringTaskStatusEl = document.getElementById("recurring-task-status");
   recurringTaskListEl = document.getElementById("recurring-task-list");
+  if (!recurringTaskFormEl || !recurringTaskStatusEl || !recurringTaskListEl) {
+    return;
+  }
+
   const frequencyEl = document.getElementById("recurring-task-frequency");
   const startDateEl = document.getElementById("recurring-task-start");
   const endDateEl = document.getElementById("recurring-task-end");
+  if (!frequencyEl || !startDateEl || !endDateEl) {
+    return;
+  }
 
   const todayKey = dayKey(new Date());
   startDateEl.value = todayKey;
@@ -1217,10 +1230,10 @@ function createTaskElement(dayKeyValue, task) {
   if (isRecurringTask) {
     deleteBtn.textContent = "✏️";
     deleteBtn.classList.add("recurring-manage");
-    deleteBtn.title = "Gérez la règle dans Tâches récurrentes";
+    deleteBtn.title = "Gérez la règle dans la page Ajouter";
     deleteBtn.setAttribute(
       "aria-label",
-      "Gérer la règle depuis la section tâches récurrentes",
+      "Gérer la règle depuis la page Ajouter",
     );
   } else {
     deleteBtn.textContent = "x";
@@ -1237,8 +1250,7 @@ function createTaskElement(dayKeyValue, task) {
   }
   deleteBtn.addEventListener("click", () => {
     if (isRecurringTask) {
-      recurringTaskFormEl?.scrollIntoView({ behavior: "smooth", block: "center" });
-      recurringTaskFormEl?.querySelector('input[name="text"]')?.focus();
+      window.location.href = "ajouter.html";
       return;
     }
 
@@ -1304,10 +1316,10 @@ function createAppointmentElement(dayKeyValue, appointment) {
   deleteBtn.type = "button";
   if (appointment.isRecurring) {
     deleteBtn.textContent = "✏️";
-    deleteBtn.title = "Gérez les récurrences dans la page Rendez-vous";
+    deleteBtn.title = "Gérez les récurrences dans la page Ajouter";
     deleteBtn.setAttribute(
       "aria-label",
-      "Gérer les rendez-vous en récurrence depuis la page Rendez-vous",
+      "Gérer les rendez-vous en récurrence depuis la page Ajouter",
     );
     deleteBtn.classList.add("recurring-manage");
   } else {
@@ -1316,7 +1328,7 @@ function createAppointmentElement(dayKeyValue, appointment) {
   }
   deleteBtn.addEventListener("click", () => {
     if (appointment.isRecurring) {
-      window.location.href = "rendezvous.html";
+      window.location.href = "ajouter.html";
       return;
     }
 
@@ -1502,6 +1514,10 @@ function createDayCard(day) {
 
 function render() {
   const grid = document.getElementById("grid");
+  if (!grid) {
+    return;
+  }
+
   grid.innerHTML = "";
   schedule.forEach((day) => {
     grid.append(createDayCard(day));
@@ -1534,9 +1550,15 @@ function bindPlannerControls() {
   cloudPushBtnEl = document.getElementById("cloud-push");
   plannerLogoutBtnEl = document.getElementById("planner-logout");
 
-  cloudPullBtnEl.addEventListener("click", () => pullFromCloud(false));
-  cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));
-  plannerLogoutBtnEl.addEventListener("click", handleLogout);
+  if (cloudPullBtnEl) {
+    cloudPullBtnEl.addEventListener("click", () => pullFromCloud(false));
+  }
+  if (cloudPushBtnEl) {
+    cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));
+  }
+  if (plannerLogoutBtnEl) {
+    plannerLogoutBtnEl.addEventListener("click", handleLogout);
+  }
 
   updateCloudButtons();
 }

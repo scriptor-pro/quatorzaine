@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quatorzaine - Ajouter</title>
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.bunny.net/css?family=manrope:400,500,700|public-sans:500,700"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="rendezvous.css" />
+  </head>
+  <body>
+    <main class="rendezvous-shell">
+      <h1>Ajouter</h1>
+      <p class="subtitle">Rendez-vous ponctuels, rendez-vous récurrents et tâches récurrentes</p>
+      <nav class="app-nav" aria-label="Navigation principale">
+        <a class="app-nav-link" href="quatorzaine.html"
+          ><img
+            class="nav-icon nav-icon-planner"
+            src="calendar-14.svg"
+            alt=""
+            aria-hidden="true"
+            width="18"
+            height="18"
+          />
+          Planner</a
+        >
+        <a class="app-nav-link active" href="ajouter.html" aria-current="page"
+          ><span class="nav-icon" aria-hidden="true">➕</span> Ajouter</a
+        >
+        <a class="app-nav-link" href="stats.html"
+          ><span class="nav-icon" aria-hidden="true">📊</span> Statistiques</a
+        >
+      </nav>
+
+      <section class="rendezvous-panel" aria-label="Nouveau rendez-vous">
+        <h2>Nouveau rendez-vous</h2>
+        <form id="appointment-form" class="appointment-entry-form">
+          <div class="field-group full">
+            <label for="appointment-text">Description</label>
+            <input
+              id="appointment-text"
+              name="text"
+              type="text"
+              placeholder="Ex: Revue de sprint"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="appointment-time">Heure</label>
+            <input id="appointment-time" name="time" type="time" required />
+          </div>
+
+          <div class="field-group">
+            <label for="appointment-duration">Durée (min)</label>
+            <input
+              id="appointment-duration"
+              name="duration"
+              type="number"
+              min="5"
+              step="5"
+              value="60"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="appointment-mode">Type</label>
+            <select id="appointment-mode" name="mode">
+              <option value="one-shot">Ponctuel</option>
+              <option value="recurring">Récurrence</option>
+            </select>
+            <p id="mode-help" class="form-hint">
+              Ponctuel : un seul jour. Récurrence : apparition automatique.
+            </p>
+          </div>
+
+          <div class="field-group recurring-only hidden">
+            <label for="appointment-start-date">Date de début</label>
+            <input id="appointment-start-date" name="startDate" type="date" required />
+          </div>
+
+          <div class="field-group one-shot-only">
+            <label for="appointment-date">Date du rendez-vous</label>
+            <input id="appointment-date" name="date" type="date" required />
+          </div>
+
+          <div class="field-group recurring-only hidden">
+            <label for="recurrence-frequency">Fréquence</label>
+            <select id="recurrence-frequency" name="frequency">
+              <option value="daily">Tous les jours</option>
+              <option value="weekly">Chaque semaine</option>
+            </select>
+          </div>
+
+          <div class="field-group recurring-only hidden">
+            <label for="appointment-end-date">Date de fin (optionnel)</label>
+            <input id="appointment-end-date" name="endDate" type="date" />
+          </div>
+
+          <fieldset class="field-group recurring-only weekday-picker hidden">
+            <legend>Jours de répétition (hebdomadaire)</legend>
+            <label><input type="checkbox" name="weekday" value="1" /> Lun</label>
+            <label><input type="checkbox" name="weekday" value="2" /> Mar</label>
+            <label><input type="checkbox" name="weekday" value="3" /> Mer</label>
+            <label><input type="checkbox" name="weekday" value="4" /> Jeu</label>
+            <label><input type="checkbox" name="weekday" value="5" /> Ven</label>
+            <label><input type="checkbox" name="weekday" value="6" /> Sam</label>
+            <label><input type="checkbox" name="weekday" value="0" /> Dim</label>
+          </fieldset>
+
+          <div class="form-actions full">
+            <button id="appointment-submit" type="submit">Enregistrer</button>
+            <button id="appointment-cancel" type="button" class="ghost hidden">
+              Annuler la modification
+            </button>
+          </div>
+        </form>
+        <p id="appointment-status" class="planner-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="rendezvous-panel" aria-label="Récurrences de rendez-vous actives">
+        <h2>Récurrences de rendez-vous</h2>
+        <p id="rules-summary" class="form-hint"></p>
+        <ul id="rules-list" class="rules-list"></ul>
+      </section>
+
+      <section class="rendezvous-panel" aria-label="Tâches récurrentes">
+        <h2>Tâches récurrentes</h2>
+        <form id="recurring-task-form" class="appointment-entry-form recurring-task-form">
+          <div class="field-group full">
+            <label for="task-recurring-text">Tâche</label>
+            <input
+              id="task-recurring-text"
+              name="text"
+              type="text"
+              placeholder="Ex: Relecture notes, sport, caisse"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="task-recurring-frequency">Fréquence</label>
+            <select id="task-recurring-frequency" name="frequency">
+              <option value="daily">Tous les jours</option>
+              <option value="weekly">Chaque semaine</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="task-recurring-start">Date de début</label>
+            <input id="task-recurring-start" name="startDate" type="date" required />
+          </div>
+
+          <div class="field-group">
+            <label for="task-recurring-end">Date de fin (optionnel)</label>
+            <input id="task-recurring-end" name="endDate" type="date" />
+          </div>
+
+          <fieldset id="task-recurring-weekdays" class="field-group weekday-picker hidden full">
+            <legend>Jours de répétition (hebdomadaire)</legend>
+            <label><input type="checkbox" name="taskWeekday" value="1" /> Lun</label>
+            <label><input type="checkbox" name="taskWeekday" value="2" /> Mar</label>
+            <label><input type="checkbox" name="taskWeekday" value="3" /> Mer</label>
+            <label><input type="checkbox" name="taskWeekday" value="4" /> Jeu</label>
+            <label><input type="checkbox" name="taskWeekday" value="5" /> Ven</label>
+            <label><input type="checkbox" name="taskWeekday" value="6" /> Sam</label>
+            <label><input type="checkbox" name="taskWeekday" value="0" /> Dim</label>
+          </fieldset>
+
+          <div class="form-actions full">
+            <button id="task-recurring-submit" type="submit">Ajouter la tâche récurrente</button>
+          </div>
+        </form>
+        <p id="recurring-task-status" class="planner-status" role="status" aria-live="polite"></p>
+        <ul id="recurring-task-list" class="rules-list"></ul>
+      </section>
+
+      <section class="rendezvous-panel" aria-label="Rendez-vous à venir">
+        <h2>Rendez-vous à venir</h2>
+        <p id="upcoming-summary" class="form-hint"></p>
+        <ul id="upcoming-list" class="upcoming-list"></ul>
+      </section>
+    </main>
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/pocketbase@0.26.8/dist/pocketbase.umd.js"
+      integrity="sha384-ZI73uCTk/NcBsnKPHMGJVgeSDF0ZSNPYG0cGceGuVJ8h2nLLpeDwYOGrceksNOvM"
+      crossorigin="anonymous"
+    ></script>
+    <script defer src="rendezvous.js"></script>
+  </body>
+</html>
