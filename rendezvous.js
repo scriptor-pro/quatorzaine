@@ -347,11 +347,17 @@ function loadRecurringTaskRulesSnapshot() {
   }
 
   try {
-    const parsed = JSON.parse(savedRaw);
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeRecurringTaskRules(JSON.parse(savedRaw));
   } catch (_error) {
     return [];
   }
+}
+
+function saveRecurringTaskRulesSnapshot() {
+  localStorage.setItem(
+    RECURRING_TASK_STORAGE_KEY,
+    JSON.stringify(recurringTaskRulesSnapshot),
+  );
 }
 
 function saveRecurringRules() {
@@ -368,8 +374,6 @@ function saveDetachedAppointments() {
 }
 
 function serializeSnapshot() {
-  recurringTaskRulesSnapshot = loadRecurringTaskRulesSnapshot();
-
   return JSON.stringify({
     schedule,
     recurringRules,
@@ -711,6 +715,189 @@ function renderRulesList() {
   });
 }
 
+function setRecurringTaskStatus(message, isError = false) {
+  const statusEl = document.getElementById("recurring-task-status");
+  if (!statusEl) {
+    return;
+  }
+  statusEl.textContent = message;
+  statusEl.style.color = isError ? "#b2452f" : "#6f6255";
+}
+
+function formatRecurringTaskRule(rule) {
+  if (rule.frequency === "daily") {
+    return `Tous les jours, depuis ${rule.startDate}${
+      rule.endDate ? `, jusqu'au ${rule.endDate}` : ""
+    }`;
+  }
+
+  const labels = rule.weekdays
+    .slice()
+    .sort((a, b) => a - b)
+    .map((index) => DAY_NAMES[index].slice(0, 3));
+  return `${labels.join(", ")}, depuis ${rule.startDate}${
+    rule.endDate ? `, jusqu'au ${rule.endDate}` : ""
+  }`;
+}
+
+function renderRecurringTaskRules() {
+  const listEl = document.getElementById("recurring-task-list");
+  if (!listEl) {
+    return;
+  }
+
+  listEl.innerHTML = "";
+
+  if (recurringTaskRulesSnapshot.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "rule-item empty";
+    empty.textContent = "Aucune tâche récurrente active.";
+    listEl.append(empty);
+    return;
+  }
+
+  recurringTaskRulesSnapshot.forEach((rule) => {
+    const item = document.createElement("li");
+    item.className = "rule-item";
+
+    const text = document.createElement("div");
+    text.className = "rule-text";
+
+    const title = document.createElement("strong");
+    title.textContent = rule.text;
+
+    const subtitle = document.createElement("span");
+    subtitle.textContent = formatRecurringTaskRule(rule);
+
+    text.append(title, subtitle);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "rule-delete";
+    deleteBtn.textContent = "Supprimer";
+    deleteBtn.addEventListener("click", () => {
+      recurringTaskRulesSnapshot = recurringTaskRulesSnapshot.filter(
+        (candidate) => candidate.id !== rule.id,
+      );
+      syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
+      saveRecurringTaskRulesSnapshot();
+      saveSchedule();
+      renderRecurringTaskRules();
+      setRecurringTaskStatus("Tâche récurrente supprimée.");
+    });
+
+    item.append(text, deleteBtn);
+    listEl.append(item);
+  });
+}
+
+function updateRecurringTaskFrequencyVisibility() {
+  const frequencyEl = document.getElementById("task-recurring-frequency");
+  const weekdayPickerEl = document.getElementById("task-recurring-weekdays");
+  if (!frequencyEl || !weekdayPickerEl) {
+    return;
+  }
+
+  const weekdayInputs = weekdayPickerEl.querySelectorAll('input[name="taskWeekday"]');
+
+  if (frequencyEl.value === "weekly") {
+    weekdayPickerEl.classList.remove("hidden");
+    weekdayInputs.forEach((input) => {
+      input.disabled = false;
+    });
+    return;
+  }
+
+  weekdayPickerEl.classList.add("hidden");
+  weekdayInputs.forEach((input) => {
+    input.checked = false;
+    input.disabled = true;
+  });
+}
+
+function bindRecurringTaskForm() {
+  const formEl = document.getElementById("recurring-task-form");
+  if (!formEl) {
+    return;
+  }
+
+  const frequencyEl = document.getElementById("task-recurring-frequency");
+  const startDateEl = document.getElementById("task-recurring-start");
+  const endDateEl = document.getElementById("task-recurring-end");
+  if (!frequencyEl || !startDateEl || !endDateEl) {
+    return;
+  }
+
+  const today = getTodayDateValue();
+  startDateEl.value = today;
+  startDateEl.min = today;
+  endDateEl.min = today;
+
+  frequencyEl.addEventListener("change", updateRecurringTaskFrequencyVisibility);
+  startDateEl.addEventListener("change", () => {
+    const startDateValue = String(startDateEl.value || "").trim();
+    endDateEl.min = startDateValue || today;
+
+    if (endDateEl.value && endDateEl.value < endDateEl.min) {
+      endDateEl.value = endDateEl.min;
+    }
+  });
+
+  formEl.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(formEl);
+    const text = String(formData.get("text") || "").trim();
+    const frequency = String(formData.get("frequency") || "daily");
+    const startDate = String(formData.get("startDate") || "").trim();
+    const endDate = String(formData.get("endDate") || "").trim();
+    const weekdays = formData
+      .getAll("taskWeekday")
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
+
+    if (!text || !startDate) {
+      setRecurringTaskStatus("Renseignez la tâche et la date de début.", true);
+      return;
+    }
+
+    if (endDate && endDate < startDate) {
+      setRecurringTaskStatus("La date de fin doit être après la date de début.", true);
+      return;
+    }
+
+    if (frequency === "weekly" && weekdays.length === 0) {
+      setRecurringTaskStatus(
+        "Choisissez au moins un jour de la semaine pour cette tâche.",
+        true,
+      );
+      return;
+    }
+
+    recurringTaskRulesSnapshot.push({
+      id: makeId(),
+      text,
+      frequency: frequency === "weekly" ? "weekly" : "daily",
+      startDate,
+      endDate,
+      weekdays,
+    });
+
+    syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
+    saveRecurringTaskRulesSnapshot();
+    saveSchedule();
+    renderRecurringTaskRules();
+    setRecurringTaskStatus("Tâche récurrente enregistrée.");
+
+    formEl.reset();
+    startDateEl.value = today;
+    endDateEl.value = "";
+    endDateEl.min = today;
+    updateRecurringTaskFrequencyVisibility();
+  });
+
+  updateRecurringTaskFrequencyVisibility();
+}
+
 function resetAppointmentFormToCreateMode() {
   const formEl = document.getElementById("appointment-form");
   const modeEl = document.getElementById("appointment-mode");
@@ -957,13 +1144,19 @@ function initApp() {
   recurringRules = loadRecurringRules();
   detachedAppointments = loadDetachedAppointments();
   recurringTaskRulesSnapshot = loadRecurringTaskRulesSnapshot();
+  syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+  saveRecurringTaskRulesSnapshot();
   history = mergeScheduleIntoHistory(loadHistory(), schedule);
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   initPocketBase(localStorage.getItem(PB_URL_KEY));
   bindForm();
+  bindRecurringTaskForm();
   renderRulesList();
+  renderRecurringTaskRules();
   renderUpcomingAppointments();
   setStatus("Prêt : ajoutez votre prochain rendez-vous.");
+  setRecurringTaskStatus("Configurez vos tâches récurrentes.");
 }
 
 initApp();

@@ -1,20 +1,143 @@
 .rendezvous-shell {
-  max-width: 920px;
+  max-width: 1100px;
   margin: 0 auto;
+  position: relative;
+}
+
+.rendezvous-shell .subtitle {
+  max-width: 760px;
+}
+
+.bauhaus-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 6px 10px;
+  border: 1px solid #ccbda4;
+  background: #f8f1e3;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.bauhaus-ribbon .shape {
+  display: inline-block;
+}
+
+.shape-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #d94c2f;
+}
+
+.shape-rect {
+  width: 20px;
+  height: 12px;
+  background: #1f4db7;
+}
+
+.shape-bar {
+  width: 42px;
+  height: 8px;
+  background: #d9a322;
+}
+
+.rendezvous-shell .app-nav-link {
+  border-radius: 10px;
+  border-width: 2px;
+  min-height: 42px;
+  font-weight: 700;
+}
+
+.rendezvous-shell .app-nav-link.active {
+  background: #e5ebff;
+  border-color: #1f4db7;
+}
+
+.add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .rendezvous-panel {
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--panel);
-  padding: 14px;
-  box-shadow: 0 10px 24px rgba(38, 29, 18, 0.08);
-  margin-bottom: 14px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0)) 0 0 /
+      100% 58px no-repeat,
+    var(--panel);
+  padding: 12px;
+  box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
+  margin-bottom: 0;
 }
 
 .rendezvous-panel h2 {
-  margin: 0 0 10px;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  margin: 0 0 6px;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rendezvous-panel h2::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #2e261e;
+  background: #ffffff;
+}
+
+.section-intro {
+  margin-bottom: 10px;
+}
+
+.panel-appointments,
+.panel-upcoming {
+  grid-column: 1 / -1;
+}
+
+.panel-appointments {
+  border-top: 4px solid #1f4db7;
+}
+
+.panel-recurring {
+  border-top: 4px solid #d94c2f;
+}
+
+.panel-tasks {
+  border-top: 4px solid #d9a322;
+}
+
+.panel-upcoming {
+  border-top: 4px solid #2d8a66;
+}
+
+.panel-appointments h2::before {
+  border-radius: 999px;
+  background: #1f4db7;
+}
+
+.panel-recurring h2::before {
+  width: 16px;
+  height: 12px;
+  background: #d94c2f;
+}
+
+.panel-tasks h2::before {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: #d9a322;
+}
+
+.panel-upcoming h2::before {
+  width: 18px;
+  height: 8px;
+  background: #2d8a66;
 }
 
 .appointment-entry-form {
@@ -35,6 +158,8 @@
 
 .form-actions button {
   flex: 1 1 220px;
+  border-radius: 6px;
+  font-weight: 700;
 }
 
 .appointment-entry-form .field-group {
@@ -47,6 +172,11 @@
   margin: 0;
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+#appointment-status,
+#recurring-task-status {
+  margin-top: 8px;
 }
 
 .appointment-entry-form select {
@@ -66,9 +196,10 @@
 
 .appointment-entry-form fieldset {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   margin: 0;
   padding: 8px;
+  background: #fffdf7;
 }
 
 .appointment-entry-form fieldset label {
@@ -112,7 +243,7 @@
 
 .rule-item {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
   padding: 9px;
   display: flex;
@@ -121,9 +252,13 @@
   align-items: center;
 }
 
+#recurring-task-list .rule-item {
+  background: #fff8e8;
+}
+
 .upcoming-item {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
   padding: 9px;
   display: flex;
@@ -168,12 +303,16 @@
 }
 
 .rule-edit {
-  background: transparent;
+  background: #fff;
   color: var(--text);
-  border-color: var(--line);
+  border-color: #b9aa91;
 }
 
 @media (max-width: 720px) {
+  .add-grid {
+    grid-template-columns: 1fr;
+  }
+
   .appointment-entry-form {
     grid-template-columns: 1fr;
   }

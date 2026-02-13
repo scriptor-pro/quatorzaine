@@ -4,18 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quatorzaine - Planner</title>
+    <script src="font-variants.js"></script>
     <link rel="icon" href="favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link
       rel="stylesheet"
-      href="https://fonts.bunny.net/css?family=manrope:400,500,700|public-sans:500,700"
+      href="https://fonts.bunny.net/css?family=dm-sans:400,500,700|inter:500,700|outfit:400,500,700|plus-jakarta-sans:500,700|rubik:500,700|sora:500,700|work-sans:400,500,700"
     />
+    <link rel="stylesheet" href="fonts.css" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main>
+    <main class="planner-shell">
       <h1>Ma quatorzaine</h1>
       <p class="subtitle">Tâches + rendez-vous sur la même page</p>
       <nav class="app-nav" aria-label="Navigation principale">
@@ -37,6 +39,12 @@
           ><span class="nav-icon" aria-hidden="true">📊</span> Statistiques</a
         >
       </nav>
+
+      <div class="bauhaus-ribbon" aria-hidden="true">
+        <span class="shape shape-circle"></span>
+        <span class="shape shape-rect"></span>
+        <span class="shape shape-bar"></span>
+      </div>
 
       <section class="planner-toolbar" aria-label="Actions cloud">
         <p

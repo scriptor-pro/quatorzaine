@@ -18,7 +18,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background:
     radial-gradient(1200px 500px at 0% 0%, #fff8e8 0%, transparent 60%),
@@ -35,10 +35,44 @@ body {
   gap: 14px;
 }
 
+.bauhaus-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid #ccbda4;
+  background: #f8f1e3;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.bauhaus-ribbon .shape {
+  display: inline-block;
+}
+
+.shape-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #d94c2f;
+}
+
+.shape-rect {
+  width: 20px;
+  height: 12px;
+  background: #1f4db7;
+}
+
+.shape-bar {
+  width: 42px;
+  height: 8px;
+  background: #d9a322;
+}
+
 .auth-header h1 {
   margin: 0 0 6px;
   font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-heading);
   font-weight: 700;
 }
 
@@ -49,9 +83,10 @@ body {
 
 .server-panel {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
   background: #fffaf2;
   padding: 14px;
+  box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
 }
 
 .server-panel h2 {
@@ -76,16 +111,16 @@ body {
 }
 
 .auth-card {
-  border-radius: 16px;
+  border-radius: 10px;
   padding: 16px;
   border: 1px solid var(--line);
-  box-shadow: 0 12px 26px rgba(38, 29, 18, 0.07);
+  box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
 }
 
 .auth-card h2 {
   margin: 0 0 6px;
   font-size: 1.2rem;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-heading);
   font-weight: 700;
 }
 
@@ -97,7 +132,7 @@ body {
 
 .login-card {
   background: linear-gradient(180deg, var(--accent-soft) 0%, #f5f8ff 100%);
-  border-left: 10px solid var(--accent);
+  border-left: 8px solid var(--accent);
 }
 
 .login-card button {
@@ -107,7 +142,7 @@ body {
 
 .signup-card {
   background: linear-gradient(180deg, var(--signup-soft) 0%, #fffaf4 100%);
-  border-right: 10px solid var(--signup);
+  border-right: 8px solid var(--signup);
   border-style: dashed;
 }
 
@@ -131,7 +166,7 @@ label {
 input,
 button {
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 6px;
   padding: 11px 12px;
   min-height: 44px;
   font: inherit;

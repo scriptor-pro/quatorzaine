@@ -4,14 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quatorzaine - Ajouter</title>
+    <script src="font-variants.js"></script>
     <link rel="icon" href="favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link
       rel="stylesheet"
-      href="https://fonts.bunny.net/css?family=manrope:400,500,700|public-sans:500,700"
+      href="https://fonts.bunny.net/css?family=dm-sans:400,500,700|inter:500,700|outfit:400,500,700|plus-jakarta-sans:500,700|rubik:500,700|sora:500,700|work-sans:400,500,700"
     />
+    <link rel="stylesheet" href="fonts.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="rendezvous.css" />
   </head>
@@ -39,9 +41,19 @@
         >
       </nav>
 
-      <section class="rendezvous-panel" aria-label="Nouveau rendez-vous">
-        <h2>Nouveau rendez-vous</h2>
-        <form id="appointment-form" class="appointment-entry-form">
+      <div class="bauhaus-ribbon" aria-hidden="true">
+        <span class="shape shape-circle"></span>
+        <span class="shape shape-rect"></span>
+        <span class="shape shape-bar"></span>
+      </div>
+
+      <div class="add-grid">
+        <section class="rendezvous-panel panel-appointments" aria-label="Nouveau rendez-vous">
+          <h2>Nouveau rendez-vous</h2>
+          <p class="form-hint section-intro">
+            Ajoutez un rendez-vous ponctuel ou une règle de récurrence en quelques champs.
+          </p>
+          <form id="appointment-form" class="appointment-entry-form">
           <div class="field-group full">
             <label for="appointment-text">Description</label>
             <input
@@ -122,19 +134,22 @@
               Annuler la modification
             </button>
           </div>
-        </form>
-        <p id="appointment-status" class="planner-status" role="status" aria-live="polite"></p>
-      </section>
+          </form>
+          <p id="appointment-status" class="planner-status" role="status" aria-live="polite"></p>
+        </section>
 
-      <section class="rendezvous-panel" aria-label="Récurrences de rendez-vous actives">
-        <h2>Récurrences de rendez-vous</h2>
-        <p id="rules-summary" class="form-hint"></p>
-        <ul id="rules-list" class="rules-list"></ul>
-      </section>
+        <section class="rendezvous-panel panel-recurring" aria-label="Récurrences de rendez-vous actives">
+          <h2>Récurrences de rendez-vous</h2>
+          <p id="rules-summary" class="form-hint"></p>
+          <ul id="rules-list" class="rules-list"></ul>
+        </section>
 
-      <section class="rendezvous-panel" aria-label="Tâches récurrentes">
-        <h2>Tâches récurrentes</h2>
-        <form id="recurring-task-form" class="appointment-entry-form recurring-task-form">
+        <section class="rendezvous-panel panel-tasks" aria-label="Tâches récurrentes">
+          <h2>Tâches récurrentes</h2>
+          <p class="form-hint section-intro">
+            Choisissez une fréquence quotidienne ou hebdomadaire avec vos jours préférés.
+          </p>
+          <form id="recurring-task-form" class="appointment-entry-form recurring-task-form">
           <div class="field-group full">
             <label for="task-recurring-text">Tâche</label>
             <input
@@ -178,16 +193,17 @@
           <div class="form-actions full">
             <button id="task-recurring-submit" type="submit">Ajouter la tâche récurrente</button>
           </div>
-        </form>
-        <p id="recurring-task-status" class="planner-status" role="status" aria-live="polite"></p>
-        <ul id="recurring-task-list" class="rules-list"></ul>
-      </section>
+          </form>
+          <p id="recurring-task-status" class="planner-status" role="status" aria-live="polite"></p>
+          <ul id="recurring-task-list" class="rules-list"></ul>
+        </section>
 
-      <section class="rendezvous-panel" aria-label="Rendez-vous à venir">
-        <h2>Rendez-vous à venir</h2>
-        <p id="upcoming-summary" class="form-hint"></p>
-        <ul id="upcoming-list" class="upcoming-list"></ul>
-      </section>
+        <section class="rendezvous-panel panel-upcoming" aria-label="Rendez-vous à venir">
+          <h2>Rendez-vous à venir</h2>
+          <p id="upcoming-summary" class="form-hint"></p>
+          <ul id="upcoming-list" class="upcoming-list"></ul>
+        </section>
+      </div>
     </main>
 
     <script

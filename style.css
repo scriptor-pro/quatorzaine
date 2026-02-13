@@ -24,7 +24,7 @@
 
 body {
   margin: 0;
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background:
     radial-gradient(1400px 500px at 20% -20%, #fdf7eb 0%, transparent 60%),
@@ -38,13 +38,53 @@ h1 {
   margin: 0 0 8px;
   font-size: clamp(1.4rem, 1rem + 2vw, 2rem);
   letter-spacing: 0.02em;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-heading);
   font-weight: 700;
 }
 
 .subtitle {
   margin: 0 0 22px;
   color: var(--muted);
+}
+
+.planner-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bauhaus-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 6px 10px;
+  border: 1px solid #ccbda4;
+  background: #f8f1e3;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.bauhaus-ribbon .shape {
+  display: inline-block;
+}
+
+.shape-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #d94c2f;
+}
+
+.shape-rect {
+  width: 20px;
+  height: 12px;
+  background: #1f4db7;
+}
+
+.shape-bar {
+  width: 42px;
+  height: 8px;
+  background: #d9a322;
 }
 
 .app-nav {
@@ -96,6 +136,17 @@ h1 {
   background: #dfe7ff;
   border-color: #3554a6;
   color: #102a6f;
+}
+
+.planner-shell .app-nav-link {
+  border-radius: 10px;
+  border-width: 2px;
+  font-weight: 700;
+}
+
+.planner-shell .app-nav-link.active {
+  background: #e5ebff;
+  border-color: #1f4db7;
 }
 
 .planner-toolbar {
@@ -152,7 +203,7 @@ h1 {
 .recurring-task-panel h2 {
   margin: 0;
   font-size: 1.05rem;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-heading);
 }
 
 .recurring-task-help {
@@ -240,9 +291,9 @@ code {
   --day-color: var(--line);
   border: 1px solid var(--line);
   border-top: 5px solid var(--day-color);
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--panel);
-  box-shadow: 0 10px 24px rgba(38, 29, 18, 0.08);
+  box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -275,7 +326,7 @@ code {
 .day-title {
   margin: 0;
   font-size: 1rem;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-heading);
   font-weight: 600;
   color: #444;
   background: color-mix(in srgb, var(--day-color) 12%, #ffffff);

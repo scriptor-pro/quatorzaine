@@ -13,7 +13,7 @@
 
 .stats-panel h2 {
   margin: 0 0 10px;
-  font-family: "Public Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-heading);
 }
 
 .streak-card {

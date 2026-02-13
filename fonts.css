@@ -1,0 +1,24 @@
+:root {
+  --font-body: "Outfit", "Segoe UI", sans-serif;
+  --font-heading: "Inter", "Segoe UI", sans-serif;
+}
+
+html[data-font-variant="a"] {
+  --font-body: "DM Sans", "Segoe UI", sans-serif;
+  --font-heading: "Sora", "Segoe UI", sans-serif;
+}
+
+html[data-font-variant="b"] {
+  --font-body: "Outfit", "Segoe UI", sans-serif;
+  --font-heading: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+}
+
+html[data-font-variant="c"] {
+  --font-body: "Work Sans", "Segoe UI", sans-serif;
+  --font-heading: "Rubik", "Segoe UI", sans-serif;
+}
+
+html[data-font-variant="d"] {
+  --font-body: "Outfit", "Segoe UI", sans-serif;
+  --font-heading: "Inter", "Segoe UI", sans-serif;
+}
