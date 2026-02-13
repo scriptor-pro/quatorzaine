@@ -171,7 +171,7 @@
 .form-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 
 #appointment-status,
@@ -289,7 +289,7 @@
 
 .rule-text span {
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.9rem;
 }
 
 .rule-delete {

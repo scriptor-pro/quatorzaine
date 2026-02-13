@@ -17,6 +17,7 @@ const DAY_NAMES = [
 
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
+const AUTO_PULL_INTERVAL_MS = 300000;
 
 let schedule = [];
 let recurringRules = [];
@@ -25,6 +26,10 @@ let recurringTaskRules = [];
 let history = [];
 let pocketbase = null;
 let cloudSaveTimer = null;
+let autoPullTimer = null;
+let cloudLastUpdatedAt = "";
+let hasPendingLocalChanges = false;
+let isPullInProgress = false;
 
 let cloudStatusEl;
 let cloudPullBtnEl;
@@ -760,18 +765,40 @@ async function getSnapshotRecord(createIfMissing = false) {
   });
 }
 
-async function pullFromCloud(silent = false) {
+async function getSnapshotMeta() {
+  if (!isCloudConnected()) {
+    return null;
+  }
+
+  const userId = pocketbase.authStore.model.id;
+  const list = await pocketbase.collection(PB_COLLECTION).getList(1, 1, {
+    filter: `owner = "${userId}"`,
+    sort: "-updated",
+    fields: "id,updated",
+  });
+
+  return list.items.length > 0 ? list.items[0] : null;
+}
+
+async function pullFromCloud(silent = false, prefetchedRecord = null) {
   if (!isCloudConnected()) {
     setCloudStatus("Connectez-vous d'abord à PocketBase.", true);
     return;
   }
 
+  if (isPullInProgress) {
+    return;
+  }
+
+  isPullInProgress = true;
+
   try {
-    const record = await getSnapshotRecord(false);
+    const record = prefetchedRecord || (await getSnapshotRecord(false));
     if (!record) {
       if (!silent) {
         setCloudStatus("Aucun snapshot cloud trouvé. Rien à télécharger.");
       }
+      isPullInProgress = false;
       return;
     }
 
@@ -795,6 +822,8 @@ async function pullFromCloud(silent = false) {
       JSON.stringify(recurringTaskRules),
     );
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    cloudLastUpdatedAt = String(record.updated || "");
+    hasPendingLocalChanges = false;
     renderRecurringTaskRules();
     render();
 
@@ -803,6 +832,8 @@ async function pullFromCloud(silent = false) {
     }
   } catch (error) {
     setCloudStatus(`Échec du téléchargement cloud: ${error.message}`, true);
+  } finally {
+    isPullInProgress = false;
   }
 }
 
@@ -817,15 +848,21 @@ async function pushToCloud(silent = false) {
   try {
     const record = await getSnapshotRecord(false);
     const payload = { schedule: serializeSnapshot() };
+    let savedRecord = null;
 
     if (record) {
-      await pocketbase.collection(PB_COLLECTION).update(record.id, payload);
+      savedRecord = await pocketbase
+        .collection(PB_COLLECTION)
+        .update(record.id, payload);
     } else {
-      await pocketbase.collection(PB_COLLECTION).create({
+      savedRecord = await pocketbase.collection(PB_COLLECTION).create({
         owner: pocketbase.authStore.model.id,
         ...payload,
       });
     }
+
+    cloudLastUpdatedAt = String(savedRecord?.updated || cloudLastUpdatedAt || "");
+    hasPendingLocalChanges = false;
 
     if (!silent) {
       setCloudStatus("Données locales envoyées vers PocketBase.");
@@ -840,13 +877,65 @@ function queueCloudSave() {
     return;
   }
 
+  hasPendingLocalChanges = true;
+
   if (cloudSaveTimer) {
     clearTimeout(cloudSaveTimer);
   }
 
   cloudSaveTimer = setTimeout(() => {
     pushToCloud(true);
-  }, 700);
+  }, 2000);
+}
+
+async function runAutoPullTick() {
+  if (!isCloudConnected() || document.hidden) {
+    return;
+  }
+
+  if (hasPendingLocalChanges || isPullInProgress) {
+    return;
+  }
+
+  try {
+    const record = await getSnapshotMeta();
+    if (!record) {
+      return;
+    }
+
+    const updatedAt = String(record.updated || "");
+    if (!updatedAt) {
+      return;
+    }
+
+    if (cloudLastUpdatedAt && updatedAt <= cloudLastUpdatedAt) {
+      return;
+    }
+
+    const fullRecord = await pocketbase.collection(PB_COLLECTION).getOne(record.id);
+    await pullFromCloud(true, fullRecord);
+    setCloudStatus("Mise à jour cloud détectée et téléchargée.");
+  } catch (_error) {
+    return;
+  }
+}
+
+function startAutoPull() {
+  if (autoPullTimer) {
+    clearInterval(autoPullTimer);
+  }
+
+  autoPullTimer = setInterval(() => {
+    runAutoPullTick();
+  }, AUTO_PULL_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      runAutoPullTick();
+    }
+  });
+
+  runAutoPullTick();
 }
 
 function formatRecurringTaskRule(rule) {
@@ -1374,6 +1463,10 @@ function createDayCard(day) {
     dayChip.classList.add("later");
   }
 
+  const dayHeading = document.createElement("div");
+  dayHeading.className = "day-heading";
+  dayHeading.append(dayChip, title);
+
   const tasksSection = document.createElement("div");
   tasksSection.className = "section";
 
@@ -1508,7 +1601,7 @@ function createDayCard(day) {
 
   appointmentsSection.append(appointmentList, appointmentForm);
 
-  card.append(dayChip, title, tasksSection, appointmentsSection);
+  card.append(dayHeading, tasksSection, appointmentsSection);
   return card;
 }
 
@@ -1529,6 +1622,11 @@ function redirectToLogin() {
 }
 
 function handleLogout() {
+  if (autoPullTimer) {
+    clearInterval(autoPullTimer);
+    autoPullTimer = null;
+  }
+
   if (pocketbase) {
     pocketbase.authStore.clear();
   }
@@ -1611,6 +1709,7 @@ async function initApp() {
 
   await pullFromCloud(true);
   setCloudStatus("Session cloud active.");
+  startAutoPull();
 }
 
 initApp();

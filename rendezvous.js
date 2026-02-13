@@ -6,6 +6,7 @@ const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
 const HISTORY_MAX_DAYS = 3650;
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
+const AUTO_PULL_INTERVAL_MS = 300000;
 const DAY_COUNT = 14;
 const DAY_NAMES = [
   "Dimanche",
@@ -25,6 +26,10 @@ let history = [];
 let editingRecurringRuleId = null;
 let pocketbase = null;
 let cloudSaveTimer = null;
+let autoPullTimer = null;
+let cloudLastUpdatedAt = "";
+let hasPendingLocalChanges = false;
+let isPullInProgress = false;
 
 function dayKey(date) {
   const year = date.getFullYear();
@@ -387,6 +392,10 @@ function makeId() {
   return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
+function isReducedMotionPreferred() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function setStatus(message, isError = false) {
   const statusEl = document.getElementById("appointment-status");
   statusEl.textContent = message;
@@ -421,17 +430,38 @@ async function pushSnapshotToCloud() {
     });
 
     const payload = { schedule: serializeSnapshot() };
+    let savedRecord = null;
     if (list.items.length > 0) {
-      await pocketbase.collection(PB_COLLECTION).update(list.items[0].id, payload);
+      savedRecord = await pocketbase
+        .collection(PB_COLLECTION)
+        .update(list.items[0].id, payload);
     } else {
-      await pocketbase.collection(PB_COLLECTION).create({
+      savedRecord = await pocketbase.collection(PB_COLLECTION).create({
         owner: userId,
         ...payload,
       });
     }
+
+    cloudLastUpdatedAt = String(savedRecord?.updated || cloudLastUpdatedAt || "");
+    hasPendingLocalChanges = false;
   } catch (_error) {
     return;
   }
+}
+
+async function getSnapshotMeta() {
+  if (!isCloudConnected()) {
+    return null;
+  }
+
+  const userId = pocketbase.authStore.model.id;
+  const list = await pocketbase.collection(PB_COLLECTION).getList(1, 1, {
+    filter: `owner = "${userId}"`,
+    sort: "-updated",
+    fields: "id,updated",
+  });
+
+  return list.items.length > 0 ? list.items[0] : null;
 }
 
 function queueCloudSave() {
@@ -439,13 +469,201 @@ function queueCloudSave() {
     return;
   }
 
+  hasPendingLocalChanges = true;
+
   if (cloudSaveTimer) {
     clearTimeout(cloudSaveTimer);
   }
 
   cloudSaveTimer = setTimeout(() => {
     pushSnapshotToCloud();
-  }, 500);
+  }, 2000);
+}
+
+function parseCloudSnapshot(rawValue) {
+  if (typeof rawValue === "string") {
+    const text = rawValue.trim();
+    if (!text) {
+      return {
+        schedule: [],
+        recurringRules: [],
+        detachedAppointments: [],
+        recurringTaskRules: [],
+        history: [],
+      };
+    }
+
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed === "string") {
+        try {
+          return parseCloudSnapshot(parsed);
+        } catch (_doubleEncodedError) {
+          return {
+            schedule: [],
+            recurringRules: [],
+            detachedAppointments: [],
+            recurringTaskRules: [],
+            history: [],
+          };
+        }
+      }
+
+      return parseCloudSnapshot(parsed);
+    } catch (_invalidJsonError) {
+      return {
+        schedule: [],
+        recurringRules: [],
+        detachedAppointments: [],
+        recurringTaskRules: [],
+        history: [],
+      };
+    }
+  }
+
+  if (Array.isArray(rawValue)) {
+    return {
+      schedule: rawValue,
+      recurringRules: [],
+      detachedAppointments: [],
+      recurringTaskRules: [],
+      history: [],
+    };
+  }
+
+  if (rawValue && typeof rawValue === "object") {
+    return {
+      schedule: Array.isArray(rawValue.schedule) ? rawValue.schedule : [],
+      recurringRules: Array.isArray(rawValue.recurringRules)
+        ? rawValue.recurringRules
+        : [],
+      detachedAppointments: Array.isArray(rawValue.detachedAppointments)
+        ? rawValue.detachedAppointments
+        : [],
+      recurringTaskRules: Array.isArray(rawValue.recurringTaskRules)
+        ? rawValue.recurringTaskRules
+        : [],
+      history: Array.isArray(rawValue.history) ? rawValue.history : [],
+    };
+  }
+
+  return {
+    schedule: [],
+    recurringRules: [],
+    detachedAppointments: [],
+    recurringTaskRules: [],
+    history: [],
+  };
+}
+
+async function pullSnapshotFromCloud(silent = false, prefetchedRecord = null) {
+  if (!isCloudConnected() || isPullInProgress) {
+    return;
+  }
+
+  isPullInProgress = true;
+
+  try {
+    let record = prefetchedRecord;
+
+    if (!record) {
+      const userId = pocketbase.authStore.model.id;
+      const list = await pocketbase.collection(PB_COLLECTION).getList(1, 1, {
+        filter: `owner = "${userId}"`,
+        sort: "-updated",
+      });
+      record = list.items[0] || null;
+    }
+
+    if (!record) {
+      return;
+    }
+
+    const snapshot = parseCloudSnapshot(record.schedule);
+    schedule = normalizeSchedule(snapshot.schedule);
+    recurringRules = normalizeRecurringRules(snapshot.recurringRules);
+    detachedAppointments = normalizeDetachedAppointments(
+      snapshot.detachedAppointments,
+    );
+    recurringTaskRulesSnapshot = normalizeRecurringTaskRules(
+      snapshot.recurringTaskRules,
+    );
+    syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
+    history = mergeScheduleIntoHistory(normalizeHistory(snapshot.history), schedule);
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+    localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
+    localStorage.setItem(
+      DETACHED_APPOINTMENTS_STORAGE_KEY,
+      JSON.stringify(detachedAppointments),
+    );
+    saveRecurringTaskRulesSnapshot();
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+
+    cloudLastUpdatedAt = String(record.updated || "");
+    hasPendingLocalChanges = false;
+
+    renderRulesList();
+    renderRecurringTaskRules();
+    renderUpcomingAppointments();
+
+    if (!silent) {
+      setStatus("Données cloud téléchargées.");
+    }
+  } catch (_error) {
+    return;
+  } finally {
+    isPullInProgress = false;
+  }
+}
+
+async function runAutoPullTick() {
+  if (!isCloudConnected() || document.hidden) {
+    return;
+  }
+
+  if (hasPendingLocalChanges || isPullInProgress) {
+    return;
+  }
+
+  try {
+    const record = await getSnapshotMeta();
+    if (!record) {
+      return;
+    }
+
+    const updatedAt = String(record.updated || "");
+    if (!updatedAt) {
+      return;
+    }
+
+    if (cloudLastUpdatedAt && updatedAt <= cloudLastUpdatedAt) {
+      return;
+    }
+
+    const fullRecord = await pocketbase.collection(PB_COLLECTION).getOne(record.id);
+    await pullSnapshotFromCloud(true, fullRecord);
+  } catch (_error) {
+    return;
+  }
+}
+
+function startAutoPull() {
+  if (autoPullTimer) {
+    clearInterval(autoPullTimer);
+  }
+
+  autoPullTimer = setInterval(() => {
+    runAutoPullTick();
+  }, AUTO_PULL_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      runAutoPullTick();
+    }
+  });
+
+  runAutoPullTick();
 }
 
 function getTodayDateValue() {
@@ -955,7 +1173,10 @@ function beginRecurringEdit(ruleId) {
   updateModeVisibility();
 
   textEl.focus();
-  textEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  textEl.scrollIntoView({
+    behavior: isReducedMotionPreferred() ? "auto" : "smooth",
+    block: "center",
+  });
   setStatus("Modification d'une récurrence en cours.");
 }
 
@@ -1139,7 +1360,7 @@ function bindForm() {
   });
 }
 
-function initApp() {
+async function initApp() {
   schedule = loadSchedule();
   recurringRules = loadRecurringRules();
   detachedAppointments = loadDetachedAppointments();
@@ -1157,6 +1378,9 @@ function initApp() {
   renderUpcomingAppointments();
   setStatus("Prêt : ajoutez votre prochain rendez-vous.");
   setRecurringTaskStatus("Configurez vos tâches récurrentes.");
+
+  await pullSnapshotFromCloud(true);
+  startAutoPull();
 }
 
 initApp();

@@ -44,7 +44,7 @@
 
 .streak-metric h4 {
   margin: 0 0 4px;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -59,7 +59,7 @@
 .streak-range {
   margin: 2px 0 0;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
 }
 
 .stats-list {
@@ -107,7 +107,7 @@
 
 .stats-date {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
 }
 
 .stats-count {

@@ -3,7 +3,7 @@
   --panel: #fffaf2;
   --line: #d9ceb7;
   --text: #30271f;
-  --muted: #6f6255;
+  --muted: #564a3f;
   --accent: #002fa7;
   --accent-soft: #dfe7ff;
   --danger: #b2452f;
@@ -32,6 +32,24 @@ body {
     var(--bg);
   min-height: 100vh;
   padding: 24px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -44px;
+  z-index: 1000;
+  background: #ffffff;
+  color: #102a6f;
+  border: 2px solid #1f4db7;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 12px;
 }
 
 h1 {
@@ -183,6 +201,18 @@ h1 {
   padding: 8px 12px;
 }
 
+#cloud-pull,
+#cloud-push {
+  background: #fff;
+  color: var(--accent);
+  border-color: #8ea7e8;
+}
+
+#cloud-pull:hover,
+#cloud-push:hover {
+  background: #eef3ff;
+}
+
 .toolbar-icon {
   width: 1rem;
   height: 1rem;
@@ -302,7 +332,7 @@ code {
 
 .day-chip {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 600;
@@ -323,16 +353,25 @@ code {
   opacity: 0.9;
 }
 
+.day-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--day-color) 12%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--day-color) 30%, #ffffff);
+  border-radius: 8px;
+  padding: 5px 7px;
+}
+
 .day-title {
   margin: 0;
   font-size: 1rem;
   font-family: var(--font-heading);
   font-weight: 600;
   color: #444;
-  background: color-mix(in srgb, var(--day-color) 12%, #ffffff);
-  border: 1px solid color-mix(in srgb, var(--day-color) 30%, #ffffff);
-  border-radius: 8px;
-  padding: 7px 9px;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
 .day-card[data-weekday="0"] {

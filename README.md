@@ -29,3 +29,11 @@ Dans le planner (`quatorzaine.html`):
 
 - `Telecharger cloud` remplace les donnees locales par la version cloud.
 - `Envoyer local vers cloud` ecrase le snapshot cloud avec les donnees locales.
+
+## Notes de cout (Fly.io)
+
+- `fly.toml` est configure pour reduire les couts d'inactivite:
+  - `auto_stop_machines = "stop"`
+  - `min_machines_running = 0`
+  - VM `shared-cpu-1x`, `256MB`
+- Effet attendu: cout mensuel plus bas, avec possible "cold start" au premier acces apres inactivite.
