@@ -1,6 +1,7 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
 const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
+const RECURRING_TASK_STORAGE_KEY = "quatorzaine_recurring_tasks_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
 const HISTORY_MAX_DAYS = 3650;
 const PB_URL_KEY = "quatorzaine_pb_url";
@@ -19,6 +20,7 @@ const DAY_NAMES = [
 let schedule = [];
 let recurringRules = [];
 let detachedAppointments = [];
+let recurringTaskRulesSnapshot = [];
 let history = [];
 let editingRecurringRuleId = null;
 let pocketbase = null;
@@ -292,6 +294,20 @@ function loadDetachedAppointments() {
   }
 }
 
+function loadRecurringTaskRulesSnapshot() {
+  const savedRaw = localStorage.getItem(RECURRING_TASK_STORAGE_KEY);
+  if (!savedRaw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(savedRaw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
 function saveRecurringRules() {
   localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
   queueCloudSave();
@@ -306,10 +322,13 @@ function saveDetachedAppointments() {
 }
 
 function serializeSnapshot() {
+  recurringTaskRulesSnapshot = loadRecurringTaskRulesSnapshot();
+
   return JSON.stringify({
     schedule,
     recurringRules,
     detachedAppointments,
+    recurringTaskRules: recurringTaskRulesSnapshot,
     history,
   });
 }
@@ -805,6 +824,7 @@ function initApp() {
   schedule = loadSchedule();
   recurringRules = loadRecurringRules();
   detachedAppointments = loadDetachedAppointments();
+  recurringTaskRulesSnapshot = loadRecurringTaskRulesSnapshot();
   history = mergeScheduleIntoHistory(loadHistory(), schedule);
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   initPocketBase(localStorage.getItem(PB_URL_KEY));

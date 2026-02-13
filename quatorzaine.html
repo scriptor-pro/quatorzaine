@@ -58,6 +58,66 @@
         </div>
       </section>
 
+      <section class="recurring-task-panel" aria-label="Tâches récurrentes">
+        <h2>Tâches récurrentes</h2>
+        <p class="recurring-task-help">
+          Ajoutez une tâche qui se crée automatiquement chaque jour ou chaque
+          semaine.
+        </p>
+        <form id="recurring-task-form" class="recurring-task-form">
+          <div class="field-group recurring-task-text-group">
+            <label class="field-label" for="recurring-task-text">Tâche</label>
+            <input
+              id="recurring-task-text"
+              name="text"
+              type="text"
+              placeholder="Ex: Sport, lecture, suivi budget"
+              required
+            />
+          </div>
+          <div class="field-group recurring-task-frequency-group">
+            <label class="field-label" for="recurring-task-frequency"
+              >Rythme</label
+            >
+            <select id="recurring-task-frequency" name="frequency">
+              <option value="daily">Tous les jours</option>
+              <option value="weekly">Chaque semaine</option>
+            </select>
+          </div>
+          <div class="field-group recurring-task-start-group">
+            <label class="field-label" for="recurring-task-start"
+              >Début</label
+            >
+            <input id="recurring-task-start" name="startDate" type="date" required />
+          </div>
+          <div class="field-group recurring-task-end-group">
+            <label class="field-label" for="recurring-task-end">Fin (optionnel)</label>
+            <input id="recurring-task-end" name="endDate" type="date" />
+          </div>
+          <fieldset
+            id="recurring-task-weekdays"
+            class="weekday-picker recurring-task-weekdays hidden"
+          >
+            <legend class="field-label">Jours de la semaine</legend>
+            <label><input type="checkbox" name="weekday" value="1" /> Lun</label>
+            <label><input type="checkbox" name="weekday" value="2" /> Mar</label>
+            <label><input type="checkbox" name="weekday" value="3" /> Mer</label>
+            <label><input type="checkbox" name="weekday" value="4" /> Jeu</label>
+            <label><input type="checkbox" name="weekday" value="5" /> Ven</label>
+            <label><input type="checkbox" name="weekday" value="6" /> Sam</label>
+            <label><input type="checkbox" name="weekday" value="0" /> Dim</label>
+          </fieldset>
+          <button type="submit" id="recurring-task-submit">Ajouter</button>
+        </form>
+        <p
+          id="recurring-task-status"
+          class="planner-status"
+          role="status"
+          aria-live="polite"
+        ></p>
+        <ul id="recurring-task-list" class="recurring-task-list"></ul>
+      </section>
+
       <div id="grid" aria-live="polite"></div>
     </main>
 

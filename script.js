@@ -1,6 +1,7 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
 const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
+const RECURRING_TASK_STORAGE_KEY = "quatorzaine_recurring_tasks_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
 const HISTORY_MAX_DAYS = 3650;
 const DAY_COUNT = 14;
@@ -20,6 +21,7 @@ const PB_COLLECTION = "planner_snapshots";
 let schedule = [];
 let recurringRules = [];
 let detachedAppointments = [];
+let recurringTaskRules = [];
 let history = [];
 let pocketbase = null;
 let cloudSaveTimer = null;
@@ -28,6 +30,9 @@ let cloudStatusEl;
 let cloudPullBtnEl;
 let cloudPushBtnEl;
 let plannerLogoutBtnEl;
+let recurringTaskFormEl;
+let recurringTaskStatusEl;
+let recurringTaskListEl;
 
 function dayKey(date) {
   const year = date.getFullYear();
@@ -130,7 +135,7 @@ function normalizeSchedule(raw) {
     }
 
     savedDay.tasks.forEach((task) => {
-      if (!task || task.done) {
+      if (!task || task.done || task.isRecurringOccurrence) {
         return;
       }
 
@@ -205,6 +210,138 @@ function normalizeRecurringRules(raw) {
       }
       return true;
     });
+}
+
+function normalizeRecurringTaskRules(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((rule) => {
+      if (!rule || typeof rule !== "object") {
+        return null;
+      }
+
+      const frequency =
+        rule.frequency === "daily" || rule.frequency === "weekly"
+          ? rule.frequency
+          : null;
+      if (!frequency) {
+        return null;
+      }
+
+      const weekdays = Array.isArray(rule.weekdays)
+        ? rule.weekdays
+            .map((value) => Number(value))
+            .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)
+        : [];
+
+      const normalized = {
+        id: typeof rule.id === "string" && rule.id ? rule.id : makeId(),
+        text: String(rule.text || "").trim(),
+        frequency,
+        startDate: String(rule.startDate || "").trim(),
+        endDate: String(rule.endDate || "").trim(),
+        weekdays,
+      };
+
+      if (!normalized.text || !normalized.startDate) {
+        return null;
+      }
+      if (normalized.frequency === "weekly" && normalized.weekdays.length === 0) {
+        return null;
+      }
+
+      return normalized;
+    })
+    .filter(Boolean);
+}
+
+function taskRuleAppliesToDay(rule, day) {
+  const dayDate = dayKeyToDate(day.key);
+  const startDate = dayKeyToDate(rule.startDate);
+  const endDate = rule.endDate ? dayKeyToDate(rule.endDate) : null;
+  if (!dayDate || !startDate) {
+    return false;
+  }
+  if (dayDate < startDate) {
+    return false;
+  }
+  if (endDate && dayDate > endDate) {
+    return false;
+  }
+
+  if (rule.frequency === "daily") {
+    return true;
+  }
+
+  return rule.weekdays.includes(day.weekdayIndex);
+}
+
+function recurringTaskId(ruleId, dayKeyValue) {
+  return `rec-task-${ruleId}-${dayKeyValue}`;
+}
+
+function syncRecurringTasksIntoSchedule(days, rules) {
+  if (!Array.isArray(days)) {
+    return;
+  }
+
+  const normalizedRules = normalizeRecurringTaskRules(rules);
+  const ruleById = new Map(normalizedRules.map((rule) => [rule.id, rule]));
+
+  days.forEach((day) => {
+    const tasks = Array.isArray(day.tasks) ? day.tasks : [];
+
+    let nextTasks = tasks.filter((task) => {
+      if (!task || !task.isRecurringOccurrence) {
+        return true;
+      }
+
+      const rule = ruleById.get(task.recurringRuleId);
+      if (!rule) {
+        return false;
+      }
+
+      if (task.recurringForDay !== day.key) {
+        return false;
+      }
+
+      return taskRuleAppliesToDay(rule, day);
+    });
+
+    normalizedRules.forEach((rule) => {
+      if (!taskRuleAppliesToDay(rule, day)) {
+        return;
+      }
+
+      const existing = nextTasks.find(
+        (task) =>
+          task &&
+          task.isRecurringOccurrence &&
+          task.recurringRuleId === rule.id &&
+          task.recurringForDay === day.key,
+      );
+
+      if (existing) {
+        existing.text = rule.text;
+        existing.id = recurringTaskId(rule.id, day.key);
+        return;
+      }
+
+      nextTasks.unshift({
+        id: recurringTaskId(rule.id, day.key),
+        text: rule.text,
+        done: false,
+        isRecurringOccurrence: true,
+        recurringRuleId: rule.id,
+        recurringForDay: day.key,
+      });
+    });
+
+    day.tasks = nextTasks;
+  });
 }
 
 function normalizeDetachedAppointments(raw) {
@@ -330,6 +467,7 @@ function parseCloudSnapshot(rawValue) {
         schedule: [],
         recurringRules: [],
         detachedAppointments: [],
+        recurringTaskRules: [],
         history: [],
       };
     }
@@ -344,6 +482,7 @@ function parseCloudSnapshot(rawValue) {
             schedule: [],
             recurringRules: [],
             detachedAppointments: [],
+            recurringTaskRules: [],
             history: [],
           };
         }
@@ -354,6 +493,7 @@ function parseCloudSnapshot(rawValue) {
         schedule: [],
         recurringRules: [],
         detachedAppointments: [],
+        recurringTaskRules: [],
         history: [],
       };
     }
@@ -364,6 +504,7 @@ function parseCloudSnapshot(rawValue) {
       schedule: rawValue,
       recurringRules: [],
       detachedAppointments: [],
+      recurringTaskRules: [],
       history: [],
     };
   }
@@ -377,6 +518,9 @@ function parseCloudSnapshot(rawValue) {
       detachedAppointments: Array.isArray(rawValue.detachedAppointments)
         ? rawValue.detachedAppointments
         : [],
+      recurringTaskRules: Array.isArray(rawValue.recurringTaskRules)
+        ? rawValue.recurringTaskRules
+        : [],
       history: Array.isArray(rawValue.history) ? rawValue.history : [],
     };
   }
@@ -385,6 +529,7 @@ function parseCloudSnapshot(rawValue) {
     schedule: [],
     recurringRules: [],
     detachedAppointments: [],
+    recurringTaskRules: [],
     history: [],
   };
 }
@@ -410,6 +555,19 @@ function loadRecurringRules() {
 
   try {
     return normalizeRecurringRules(JSON.parse(savedRaw));
+  } catch (_error) {
+    return [];
+  }
+}
+
+function loadRecurringTaskRules() {
+  const savedRaw = localStorage.getItem(RECURRING_TASK_STORAGE_KEY);
+  if (!savedRaw) {
+    return [];
+  }
+
+  try {
+    return normalizeRecurringTaskRules(JSON.parse(savedRaw));
   } catch (_error) {
     return [];
   }
@@ -453,6 +611,14 @@ function saveRecurringRules() {
   queueCloudSave();
 }
 
+function saveRecurringTaskRules() {
+  localStorage.setItem(
+    RECURRING_TASK_STORAGE_KEY,
+    JSON.stringify(recurringTaskRules),
+  );
+  queueCloudSave();
+}
+
 function saveDetachedAppointments() {
   localStorage.setItem(
     DETACHED_APPOINTMENTS_STORAGE_KEY,
@@ -466,6 +632,7 @@ function serializeSnapshot() {
     schedule,
     recurringRules,
     detachedAppointments,
+    recurringTaskRules,
     history,
   });
 }
@@ -608,6 +775,8 @@ async function pullFromCloud(silent = false) {
     detachedAppointments = normalizeDetachedAppointments(
       snapshot.detachedAppointments,
     );
+    recurringTaskRules = normalizeRecurringTaskRules(snapshot.recurringTaskRules);
+    syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
     history = mergeScheduleIntoHistory(normalizeHistory(snapshot.history), schedule);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
     localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
@@ -615,7 +784,12 @@ async function pullFromCloud(silent = false) {
       DETACHED_APPOINTMENTS_STORAGE_KEY,
       JSON.stringify(detachedAppointments),
     );
+    localStorage.setItem(
+      RECURRING_TASK_STORAGE_KEY,
+      JSON.stringify(recurringTaskRules),
+    );
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    renderRecurringTaskRules();
     render();
 
     if (!silent) {
@@ -667,6 +841,187 @@ function queueCloudSave() {
   cloudSaveTimer = setTimeout(() => {
     pushToCloud(true);
   }, 700);
+}
+
+function formatRecurringTaskRule(rule) {
+  if (rule.frequency === "daily") {
+    return `Tous les jours depuis ${rule.startDate}${
+      rule.endDate ? ` jusqu'au ${rule.endDate}` : ""
+    }`;
+  }
+
+  const labels = rule.weekdays
+    .slice()
+    .sort((a, b) => a - b)
+    .map((index) => DAY_NAMES[index].slice(0, 3));
+  return `${labels.join(", ")} depuis ${rule.startDate}${
+    rule.endDate ? ` jusqu'au ${rule.endDate}` : ""
+  }`;
+}
+
+function setRecurringTaskStatus(message, isError = false) {
+  if (!recurringTaskStatusEl) {
+    return;
+  }
+
+  recurringTaskStatusEl.textContent = message;
+  recurringTaskStatusEl.style.color = isError ? "#b2452f" : "#6f6255";
+}
+
+function renderRecurringTaskRules() {
+  if (!recurringTaskListEl) {
+    return;
+  }
+
+  recurringTaskListEl.innerHTML = "";
+
+  if (recurringTaskRules.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "recurring-task-item empty";
+    empty.textContent = "Aucune tâche récurrente active.";
+    recurringTaskListEl.append(empty);
+    return;
+  }
+
+  recurringTaskRules.forEach((rule) => {
+    const item = document.createElement("li");
+    item.className = "recurring-task-item";
+
+    const details = document.createElement("div");
+    details.className = "recurring-task-details";
+
+    const title = document.createElement("strong");
+    title.textContent = rule.text;
+
+    const subtitle = document.createElement("span");
+    subtitle.textContent = formatRecurringTaskRule(rule);
+
+    details.append(title, subtitle);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "delete";
+    deleteBtn.textContent = "Supprimer";
+    deleteBtn.addEventListener("click", () => {
+      recurringTaskRules = recurringTaskRules.filter(
+        (candidate) => candidate.id !== rule.id,
+      );
+      syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
+      saveRecurringTaskRules();
+      saveSchedule();
+      renderRecurringTaskRules();
+      render();
+      setRecurringTaskStatus("Tâche récurrente supprimée.");
+    });
+
+    item.append(details, deleteBtn);
+    recurringTaskListEl.append(item);
+  });
+}
+
+function updateRecurringTaskFrequencyVisibility() {
+  const frequencyEl = document.getElementById("recurring-task-frequency");
+  const weekdaysEl = document.getElementById("recurring-task-weekdays");
+  const weekdayInputs = weekdaysEl.querySelectorAll('input[name="weekday"]');
+
+  if (frequencyEl.value === "weekly") {
+    weekdaysEl.classList.remove("hidden");
+    weekdayInputs.forEach((input) => {
+      input.disabled = false;
+    });
+    return;
+  }
+
+  weekdaysEl.classList.add("hidden");
+  weekdayInputs.forEach((input) => {
+    input.checked = false;
+    input.disabled = true;
+  });
+}
+
+function bindRecurringTaskControls() {
+  recurringTaskFormEl = document.getElementById("recurring-task-form");
+  recurringTaskStatusEl = document.getElementById("recurring-task-status");
+  recurringTaskListEl = document.getElementById("recurring-task-list");
+  const frequencyEl = document.getElementById("recurring-task-frequency");
+  const startDateEl = document.getElementById("recurring-task-start");
+  const endDateEl = document.getElementById("recurring-task-end");
+
+  const todayKey = dayKey(new Date());
+  startDateEl.value = todayKey;
+  startDateEl.min = todayKey;
+  endDateEl.min = todayKey;
+
+  frequencyEl.addEventListener("change", updateRecurringTaskFrequencyVisibility);
+  startDateEl.addEventListener("change", () => {
+    const start = String(startDateEl.value || "").trim();
+    endDateEl.min = start || todayKey;
+    if (endDateEl.value && endDateEl.value < endDateEl.min) {
+      endDateEl.value = endDateEl.min;
+    }
+  });
+
+  recurringTaskFormEl.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(recurringTaskFormEl);
+    const text = String(formData.get("text") || "").trim();
+    const frequency = String(formData.get("frequency") || "daily");
+    const startDate = String(formData.get("startDate") || "").trim();
+    const endDate = String(formData.get("endDate") || "").trim();
+    const weekdays = formData
+      .getAll("weekday")
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
+
+    if (!text || !startDate) {
+      setRecurringTaskStatus("Renseignez le texte et la date de début.", true);
+      return;
+    }
+
+    if (endDate && endDate < startDate) {
+      setRecurringTaskStatus("La date de fin doit être après la date de début.", true);
+      return;
+    }
+
+    if (frequency === "weekly" && weekdays.length === 0) {
+      const startDateObj = dayKeyToDate(startDate);
+      if (startDateObj) {
+        weekdays.push(startDateObj.getDay());
+      }
+    }
+
+    if (frequency === "weekly" && weekdays.length === 0) {
+      setRecurringTaskStatus(
+        "Choisissez au moins un jour pour la récurrence hebdomadaire.",
+        true,
+      );
+      return;
+    }
+
+    recurringTaskRules.push({
+      id: makeId(),
+      text,
+      frequency: frequency === "weekly" ? "weekly" : "daily",
+      startDate,
+      endDate,
+      weekdays,
+    });
+
+    syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
+    saveRecurringTaskRules();
+    saveSchedule();
+    recurringTaskFormEl.reset();
+    startDateEl.value = todayKey;
+    endDateEl.min = todayKey;
+    updateRecurringTaskFrequencyVisibility();
+    renderRecurringTaskRules();
+    render();
+    setRecurringTaskStatus("Tâche récurrente ajoutée.");
+  });
+
+  updateRecurringTaskFrequencyVisibility();
+  renderRecurringTaskRules();
+  setRecurringTaskStatus("Configurez vos routines en quelques clics.");
 }
 
 function promptMoveTargetDay(fromDayKey) {
@@ -753,13 +1108,22 @@ function getAppointmentsForDay(day) {
 }
 
 function createTaskElement(dayKeyValue, task) {
+  const isRecurringTask = !!task.isRecurringOccurrence;
   const li = document.createElement("li");
   li.className = `task-item${task.done ? " done" : ""}`;
-  li.draggable = true;
+  if (isRecurringTask) {
+    li.classList.add("recurring-task");
+  }
+  li.draggable = !isRecurringTask;
   li.dataset.taskId = task.id;
   li.dataset.dayKey = dayKeyValue;
 
   li.addEventListener("dragstart", (event) => {
+    if (isRecurringTask) {
+      event.preventDefault();
+      return;
+    }
+
     event.dataTransfer.setData(
       "application/json",
       JSON.stringify({ fromDayKey: dayKeyValue, taskId: task.id }),
@@ -788,7 +1152,18 @@ function createTaskElement(dayKeyValue, task) {
   const text = document.createElement("label");
   text.className = "task-text";
   text.htmlFor = checkboxId;
-  text.textContent = task.text;
+  const textWrap = document.createElement("span");
+  textWrap.className = "task-text-wrap";
+  textWrap.append(task.text);
+  if (isRecurringTask) {
+    const badge = document.createElement("span");
+    badge.className = "task-badge";
+    badge.textContent = "⟳";
+    badge.title = "Tâche récurrente";
+    badge.setAttribute("aria-label", "Tâche récurrente");
+    textWrap.append(badge);
+  }
+  text.append(textWrap);
 
   main.append(check, text);
 
@@ -799,8 +1174,21 @@ function createTaskElement(dayKeyValue, task) {
   moveBtn.className = "task-move";
   moveBtn.type = "button";
   moveBtn.textContent = "Déplacer";
-  moveBtn.setAttribute("aria-label", "Déplacer la tâche vers un autre jour");
+  if (isRecurringTask) {
+    moveBtn.disabled = true;
+    moveBtn.title = "Déplacez la règle récurrente, pas l'occurrence";
+    moveBtn.setAttribute(
+      "aria-label",
+      "La tâche récurrente se déplace via sa règle",
+    );
+  } else {
+    moveBtn.setAttribute("aria-label", "Déplacer la tâche vers un autre jour");
+  }
   moveBtn.addEventListener("click", () => {
+    if (isRecurringTask) {
+      return;
+    }
+
     const targetDayKey = promptMoveTargetDay(dayKeyValue);
     if (!targetDayKey) {
       return;
@@ -826,18 +1214,34 @@ function createTaskElement(dayKeyValue, task) {
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
   deleteBtn.type = "button";
-  deleteBtn.textContent = "x";
-  deleteBtn.disabled = !task.done;
-  deleteBtn.setAttribute(
-    "aria-label",
-    task.done
+  if (isRecurringTask) {
+    deleteBtn.textContent = "✏️";
+    deleteBtn.classList.add("recurring-manage");
+    deleteBtn.title = "Gérez la règle dans Tâches récurrentes";
+    deleteBtn.setAttribute(
+      "aria-label",
+      "Gérer la règle depuis la section tâches récurrentes",
+    );
+  } else {
+    deleteBtn.textContent = "x";
+    deleteBtn.disabled = !task.done;
+    deleteBtn.setAttribute(
+      "aria-label",
+      task.done
+        ? "Supprimer la tâche"
+        : "Terminez la tâche pour activer la suppression",
+    );
+    deleteBtn.title = task.done
       ? "Supprimer la tâche"
-      : "Terminez la tâche pour activer la suppression",
-  );
-  deleteBtn.title = task.done
-    ? "Supprimer la tâche"
-    : "Terminez la tâche pour pouvoir la supprimer";
+      : "Terminez la tâche pour pouvoir la supprimer";
+  }
   deleteBtn.addEventListener("click", () => {
+    if (isRecurringTask) {
+      recurringTaskFormEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+      recurringTaskFormEl?.querySelector('input[name="text"]')?.focus();
+      return;
+    }
+
     if (!task.done) {
       return;
     }
@@ -1117,6 +1521,7 @@ function handleLogout() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(RECURRING_STORAGE_KEY);
     localStorage.removeItem(DETACHED_APPOINTMENTS_STORAGE_KEY);
+    localStorage.removeItem(RECURRING_TASK_STORAGE_KEY);
     localStorage.removeItem(HISTORY_STORAGE_KEY);
   }
 
@@ -1167,9 +1572,17 @@ async function initApp() {
 
   schedule = loadSchedule();
   recurringRules = loadRecurringRules();
+  recurringTaskRules = loadRecurringTaskRules();
   detachedAppointments = loadDetachedAppointments();
+  syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
+  localStorage.setItem(
+    RECURRING_TASK_STORAGE_KEY,
+    JSON.stringify(recurringTaskRules),
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
   history = mergeScheduleIntoHistory(loadHistory(), schedule);
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  bindRecurringTaskControls();
   render();
   updateCloudButtons();
   setCloudStatus("Session cloud active. Synchronisation en cours...");

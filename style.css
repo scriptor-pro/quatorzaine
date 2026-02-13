@@ -124,6 +124,90 @@ h1 {
   flex-wrap: wrap;
 }
 
+.recurring-task-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 8px 20px rgba(38, 29, 18, 0.06);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.recurring-task-panel h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-family: "Public Sans", "Segoe UI", sans-serif;
+}
+
+.recurring-task-help {
+  margin: 6px 0 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.recurring-task-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+.recurring-task-text-group {
+  grid-column: span 2;
+}
+
+.recurring-task-weekdays {
+  grid-column: span 4;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recurring-task-weekdays label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+  min-height: 36px;
+}
+
+.recurring-task-list {
+  margin-top: 10px;
+}
+
+.recurring-task-item {
+  background: #f8f3e8;
+  border: 1px solid #d5c5a1;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.recurring-task-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recurring-task-details span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
 code {
   background: #efe9dc;
   border-radius: 5px;
@@ -264,6 +348,10 @@ ul {
   text-decoration: line-through;
 }
 
+.task-item.recurring-task {
+  border-style: dashed;
+}
+
 .appointment-item {
   background: var(--appointment-bg);
 }
@@ -309,6 +397,25 @@ ul {
 .appointment-text {
   overflow-wrap: break-word;
   word-break: normal;
+}
+
+.task-text-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-badge {
+  border: 1px dashed #6a6d7a;
+  border-radius: 999px;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  background: #eef1f7;
+  color: #42506b;
 }
 
 .appointment-time {
@@ -409,6 +516,7 @@ ul {
 }
 
 input,
+select,
 button {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -434,6 +542,7 @@ button {
 }
 
 input:focus-visible,
+select:focus-visible,
 button:focus-visible,
 .task-item:focus-visible {
   outline: 3px solid var(--accent);
@@ -500,5 +609,14 @@ button.delete.recurring-manage {
 
   .planner-toolbar {
     align-items: flex-start;
+  }
+
+  .recurring-task-form {
+    grid-template-columns: 1fr;
+  }
+
+  .recurring-task-text-group,
+  .recurring-task-weekdays {
+    grid-column: 1;
   }
 }
