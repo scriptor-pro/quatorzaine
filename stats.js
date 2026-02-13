@@ -1,4 +1,5 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
+const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
 const DAY_NAMES = [
   "Dimanche",
   "Lundi",
@@ -32,6 +33,17 @@ function parseDayKeyToDate(value) {
 }
 
 function loadSchedule() {
+  const historyRaw = localStorage.getItem(HISTORY_STORAGE_KEY);
+  if (historyRaw) {
+    try {
+      const parsedHistory = JSON.parse(historyRaw);
+      if (Array.isArray(parsedHistory)) {
+        return parsedHistory;
+      }
+    } catch (_historyError) {
+    }
+  }
+
   const savedRaw = localStorage.getItem(STORAGE_KEY);
   if (!savedRaw) {
     return [];

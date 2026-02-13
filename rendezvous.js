@@ -1,6 +1,8 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
 const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
+const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
+const HISTORY_MAX_DAYS = 3650;
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
 const DAY_COUNT = 14;
@@ -17,6 +19,7 @@ const DAY_NAMES = [
 let schedule = [];
 let recurringRules = [];
 let detachedAppointments = [];
+let history = [];
 let editingRecurringRuleId = null;
 let pocketbase = null;
 let cloudSaveTimer = null;
@@ -155,6 +158,81 @@ function normalizeDetachedAppointments(raw) {
     .filter(Boolean);
 }
 
+function normalizeHistory(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((day) => {
+      if (!day || typeof day !== "object") {
+        return null;
+      }
+
+      const key = String(day.key || "").trim();
+      const keyDate = parseDayKeyToDate(key);
+      if (!keyDate) {
+        return null;
+      }
+
+      const weekdayIndex = Number(day.weekdayIndex);
+      const tasks = Array.isArray(day.tasks)
+        ? day.tasks.map((task) => ({
+            id: typeof task?.id === "string" && task.id ? task.id : makeId(),
+            text: String(task?.text || ""),
+            done: !!task?.done,
+          }))
+        : [];
+
+      return {
+        key,
+        weekdayIndex:
+          Number.isInteger(weekdayIndex) && weekdayIndex >= 0 && weekdayIndex <= 6
+            ? weekdayIndex
+            : keyDate.getDay(),
+        tasks,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.key.localeCompare(b.key));
+}
+
+function mergeScheduleIntoHistory(previousHistory, currentSchedule) {
+  const byKey = new Map(
+    normalizeHistory(previousHistory).map((day) => [day.key, day]),
+  );
+
+  currentSchedule.forEach((day) => {
+    const key = String(day.key || "").trim();
+    const keyDate = parseDayKeyToDate(key);
+    if (!keyDate) {
+      return;
+    }
+
+    byKey.set(key, {
+      key,
+      weekdayIndex: keyDate.getDay(),
+      tasks: Array.isArray(day.tasks)
+        ? day.tasks.map((task) => ({
+            id: typeof task?.id === "string" && task.id ? task.id : makeId(),
+            text: String(task?.text || ""),
+            done: !!task?.done,
+          }))
+        : [],
+    });
+  });
+
+  const merged = Array.from(byKey.values()).sort((a, b) =>
+    a.key.localeCompare(b.key),
+  );
+
+  if (merged.length <= HISTORY_MAX_DAYS) {
+    return merged;
+  }
+
+  return merged.slice(merged.length - HISTORY_MAX_DAYS);
+}
+
 function loadSchedule() {
   const savedRaw = localStorage.getItem(STORAGE_KEY);
   if (!savedRaw) {
@@ -168,8 +246,23 @@ function loadSchedule() {
   }
 }
 
+function loadHistory() {
+  const savedRaw = localStorage.getItem(HISTORY_STORAGE_KEY);
+  if (!savedRaw) {
+    return [];
+  }
+
+  try {
+    return normalizeHistory(JSON.parse(savedRaw));
+  } catch (_error) {
+    return [];
+  }
+}
+
 function saveSchedule() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+  history = mergeScheduleIntoHistory(history, schedule);
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   queueCloudSave();
 }
 
@@ -217,6 +310,7 @@ function serializeSnapshot() {
     schedule,
     recurringRules,
     detachedAppointments,
+    history,
   });
 }
 
@@ -711,6 +805,8 @@ function initApp() {
   schedule = loadSchedule();
   recurringRules = loadRecurringRules();
   detachedAppointments = loadDetachedAppointments();
+  history = mergeScheduleIntoHistory(loadHistory(), schedule);
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   initPocketBase(localStorage.getItem(PB_URL_KEY));
   bindForm();
   renderRulesList();
