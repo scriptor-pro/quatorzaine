@@ -399,7 +399,7 @@ function isReducedMotionPreferred() {
 function setStatus(message, isError = false) {
   const statusEl = document.getElementById("appointment-status");
   statusEl.textContent = message;
-  statusEl.style.color = isError ? "#b2452f" : "#6f6255";
+  statusEl.dataset.state = isError ? "error" : "info";
 }
 
 function initPocketBase(url) {
@@ -939,7 +939,7 @@ function setRecurringTaskStatus(message, isError = false) {
     return;
   }
   statusEl.textContent = message;
-  statusEl.style.color = isError ? "#b2452f" : "#6f6255";
+  statusEl.dataset.state = isError ? "error" : "info";
 }
 
 function formatRecurringTaskRule(rule) {

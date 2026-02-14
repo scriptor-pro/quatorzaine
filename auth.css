@@ -9,6 +9,21 @@
   --signup-soft: #f7efe6;
   --success: #1f7a45;
   --danger: #b2452f;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --surface-page: #faf8f3;
+  --surface-panel: #fffaf2;
+  --surface-item: #ffffff;
+  --separator-strong: #d9ceb7;
+  --separator-soft: #e5dbca;
+  --fs-body: 1rem;
+  --fs-meta: 0.875rem;
+  --fs-label: 0.75rem;
+  --fs-h1: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+  --fs-h2: 1.125rem;
 }
 
 * {
@@ -23,8 +38,8 @@ body {
   background:
     radial-gradient(1200px 500px at 0% 0%, #fff8e8 0%, transparent 60%),
     radial-gradient(900px 500px at 100% 0%, #e8f5fb 0%, transparent 55%),
-    var(--bg);
-  padding: 24px;
+    var(--surface-page);
+  padding: var(--s-5);
 }
 
 .skip-link {
@@ -46,18 +61,18 @@ body {
 }
 
 .auth-shell {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--s-4);
 }
 
 .bauhaus-ribbon {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
   border: 1px solid #ccbda4;
   background: #f8f1e3;
   border-radius: 8px;
@@ -89,33 +104,57 @@ body {
 
 .auth-header h1 {
   margin: 0 0 6px;
-  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+  font-size: var(--fs-h1);
   font-family: var(--font-heading);
   font-weight: 700;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.app-version {
+  font-size: 0.56em;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0;
 }
 
 .auth-header p {
   margin: 0;
   color: var(--muted);
+  font-size: var(--fs-meta);
 }
 
 .server-panel {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-strong);
   border-radius: 10px;
-  background: #fffaf2;
-  padding: 14px;
+  background: var(--surface-panel);
+  padding: var(--s-3);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
 }
 
 .server-panel h2 {
-  margin: 0 0 10px;
-  font-size: 1rem;
+  margin: 0 0 var(--s-3);
+  font-size: var(--fs-h2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.server-panel h2::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #dbe6ff;
+  border: 1px solid #8ea7e8;
 }
 
 .server-form {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 8px;
+  gap: var(--s-2);
 }
 
 .server-form label {
@@ -125,27 +164,38 @@ body {
 .auth-panels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--s-4);
 }
 
 .auth-card {
   border-radius: 10px;
-  padding: 16px;
-  border: 1px solid var(--line);
+  padding: var(--s-4);
+  border: 1px solid var(--separator-strong);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
 }
 
 .auth-card h2 {
   margin: 0 0 6px;
-  font-size: 1.2rem;
+  font-size: var(--fs-h2);
   font-family: var(--font-heading);
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.auth-card h2::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 45%, #ffffff);
 }
 
 .card-subtitle {
-  margin: 0 0 12px;
+  margin: 0 0 var(--s-3);
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: var(--fs-meta);
 }
 
 .login-card {
@@ -172,29 +222,49 @@ body {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s-2);
 }
 
 label {
-  font-size: 0.9rem;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: #3e3128;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 input,
 button {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-strong);
   border-radius: 6px;
   padding: 11px 12px;
   min-height: 44px;
   font: inherit;
   color: inherit;
-  background: #fff;
+  background: var(--surface-item);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+input:hover {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--separator-strong));
 }
 
 button {
   color: #fff;
   cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(0.94);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 input:focus-visible,
@@ -207,7 +277,7 @@ button:focus-visible {
   min-height: 1.3em;
   margin: 10px 0 0;
   color: #4c433c;
-  font-size: 0.9rem;
+  font-size: var(--fs-meta);
 }
 
 .status-text.error {
@@ -220,7 +290,7 @@ button:focus-visible {
 
 @media (max-width: 860px) {
   body {
-    padding: 14px;
+    padding: var(--s-3);
   }
 
   .auth-panels {

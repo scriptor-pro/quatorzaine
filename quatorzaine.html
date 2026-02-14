@@ -19,25 +19,18 @@
   <body>
     <a class="skip-link" href="#main-content">Aller au contenu principal</a>
     <main id="main-content" class="planner-shell">
-      <h1>Ma quatorzaine</h1>
-      <p class="subtitle">Tâches + rendez-vous sur la même page</p>
+      <h1>Ma quatorzaine <span class="app-version">v0.9.13</span></h1>
+      <p class="subtitle">Tâches et rendez-vous sur une seule page</p>
       <nav class="app-nav" aria-label="Navigation principale">
         <a class="app-nav-link active" href="quatorzaine.html" aria-current="page"
-          ><img
-            class="nav-icon nav-icon-planner"
-            src="calendar-14.svg"
-            alt=""
-            aria-hidden="true"
-            width="18"
-            height="18"
-          />
+          ><i class="nav-icon" data-lucide="layout-grid" aria-hidden="true"></i>
           Planner</a
         >
         <a class="app-nav-link" href="ajouter.html"
-          ><span class="nav-icon" aria-hidden="true">➕</span> Ajouter</a
+          ><i class="nav-icon" data-lucide="plus" aria-hidden="true"></i> Ajouter</a
         >
         <a class="app-nav-link" href="stats.html"
-          ><span class="nav-icon" aria-hidden="true">📊</span> Statistiques</a
+          ><i class="nav-icon" data-lucide="bar-chart-3" aria-hidden="true"></i> Statistiques</a
         >
       </nav>
 
@@ -58,26 +51,12 @@
         </p>
         <div class="toolbar-actions">
           <button id="cloud-pull" type="button">
-            <img
-              class="toolbar-icon"
-              src="cloud-down-16x16.png"
-              alt=""
-              aria-hidden="true"
-              width="16"
-              height="16"
-            />
-            Télécharger cloud
+            <i class="toolbar-icon" data-lucide="cloud-download" aria-hidden="true"></i>
+            Télécharger depuis le cloud
           </button>
           <button id="cloud-push" type="button">
-            <img
-              class="toolbar-icon"
-              src="cloud-up-16x16.png"
-              alt=""
-              aria-hidden="true"
-              width="16"
-              height="16"
-            />
-            Envoyer local vers cloud
+            <i class="toolbar-icon" data-lucide="cloud-upload" aria-hidden="true"></i>
+            Envoyer vers le cloud
           </button>
           <button id="planner-logout" type="button" class="ghost">
             Déconnexion
@@ -100,6 +79,8 @@
       integrity="sha384-ZI73uCTk/NcBsnKPHMGJVgeSDF0ZSNPYG0cGceGuVJ8h2nLLpeDwYOGrceksNOvM"
       crossorigin="anonymous"
     ></script>
+    <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script defer src="lucide-init.js"></script>
     <script defer src="script.js"></script>
   </body>
 </html>

@@ -20,25 +20,18 @@
   <body>
     <a class="skip-link" href="#main-content">Aller au contenu principal</a>
     <main id="main-content" class="stats-shell">
-      <h1>Statistiques</h1>
-      <p class="subtitle">Top 10 des jours avec le plus de tâches terminées</p>
+      <h1>Statistiques <span class="app-version">v0.9.13</span></h1>
+      <p class="subtitle">Top 10 des journées avec le plus de tâches terminées</p>
       <nav class="app-nav" aria-label="Navigation principale">
         <a class="app-nav-link" href="quatorzaine.html"
-          ><img
-            class="nav-icon nav-icon-planner"
-            src="calendar-14.svg"
-            alt=""
-            aria-hidden="true"
-            width="18"
-            height="18"
-          />
+          ><i class="nav-icon" data-lucide="layout-grid" aria-hidden="true"></i>
           Planner</a
         >
         <a class="app-nav-link" href="ajouter.html"
-          ><span class="nav-icon" aria-hidden="true">➕</span> Ajouter</a
+          ><i class="nav-icon" data-lucide="plus" aria-hidden="true"></i> Ajouter</a
         >
         <a class="app-nav-link active" href="stats.html" aria-current="page"
-          ><span class="nav-icon" aria-hidden="true">📊</span> Statistiques</a
+          ><i class="nav-icon" data-lucide="bar-chart-3" aria-hidden="true"></i> Statistiques</a
         >
       </nav>
 
@@ -70,6 +63,8 @@
       </section>
     </main>
 
+    <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script defer src="lucide-init.js"></script>
     <script defer src="stats.js"></script>
   </body>
 </html>

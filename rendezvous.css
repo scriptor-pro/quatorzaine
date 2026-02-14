@@ -1,5 +1,5 @@
 .rendezvous-shell {
-  max-width: 1100px;
+  max-width: 1120px;
   margin: 0 auto;
   position: relative;
 }
@@ -11,9 +11,9 @@
 .bauhaus-ribbon {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 14px;
-  padding: 6px 10px;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-4);
+  padding: var(--s-2) var(--s-3);
   border: 1px solid #ccbda4;
   background: #f8f1e3;
   border-radius: 8px;
@@ -46,7 +46,7 @@
 .rendezvous-shell .app-nav-link {
   border-radius: 10px;
   border-width: 2px;
-  min-height: 42px;
+  min-height: 44px;
   font-weight: 700;
 }
 
@@ -58,28 +58,29 @@
 .add-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--s-4);
+  align-items: start;
 }
 
 .rendezvous-panel {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-strong);
   border-radius: 10px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0)) 0 0 /
       100% 58px no-repeat,
-    var(--panel);
-  padding: 12px;
+    var(--surface-panel);
+  padding: var(--s-3);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
   margin-bottom: 0;
 }
 
 .rendezvous-panel h2 {
-  margin: 0 0 6px;
+  margin: 0 0 var(--s-2);
   font-family: var(--font-heading);
-  font-size: 1rem;
+  font-size: var(--fs-h2);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s-2);
 }
 
 .rendezvous-panel h2::before {
@@ -92,7 +93,9 @@
 }
 
 .section-intro {
-  margin-bottom: 10px;
+  margin-bottom: var(--s-2);
+  padding-left: var(--s-2);
+  border-left: 2px solid color-mix(in srgb, var(--separator-strong) 75%, #ffffff);
 }
 
 .panel-appointments,
@@ -143,7 +146,8 @@
 .appointment-entry-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--s-2);
+  align-items: end;
 }
 
 .appointment-entry-form .full {
@@ -152,7 +156,7 @@
 
 .form-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--s-2);
   flex-wrap: wrap;
 }
 
@@ -165,24 +169,24 @@
 .appointment-entry-form .field-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--s-1);
 }
 
 .form-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--fs-meta);
 }
 
 #appointment-status,
 #recurring-task-status {
-  margin-top: 8px;
+  margin-top: var(--s-2);
 }
 
 .appointment-entry-form select {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-strong);
   border-radius: 8px;
-  padding: 10px 11px;
+  padding: 10px 12px;
   min-height: 44px;
   font: inherit;
   color: inherit;
@@ -195,25 +199,25 @@
 }
 
 .appointment-entry-form fieldset {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-soft);
   border-radius: 8px;
   margin: 0;
-  padding: 8px;
-  background: #fffdf7;
+  padding: var(--s-2);
+  background: var(--surface-item);
 }
 
 .appointment-entry-form fieldset label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-right: 10px;
-  margin-bottom: 6px;
-  font-size: 0.88rem;
+  gap: var(--s-2);
+  margin-right: var(--s-3);
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-meta);
 }
 
 .appointment-entry-form legend {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-label);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 0 4px;
@@ -229,7 +233,38 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s-2);
+}
+
+.panel-recurring .rule-item,
+.panel-tasks .rule-item,
+.panel-upcoming .upcoming-item {
+  position: relative;
+}
+
+.panel-recurring .rule-item::before,
+.panel-tasks .rule-item::before,
+.panel-upcoming .upcoming-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  background: color-mix(in srgb, var(--separator-strong) 65%, #ffffff);
+}
+
+.panel-recurring .rule-item::before {
+  background: color-mix(in srgb, #d94c2f 45%, #ffffff);
+}
+
+.panel-tasks .rule-item::before {
+  background: color-mix(in srgb, #d9a322 45%, #ffffff);
+}
+
+.panel-upcoming .upcoming-item::before {
+  background: color-mix(in srgb, #2d8a66 45%, #ffffff);
 }
 
 .upcoming-list {
@@ -238,18 +273,23 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s-2);
 }
 
 .rule-item {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-soft);
   border-radius: 8px;
-  background: #fff;
-  padding: 9px;
+  background: var(--surface-item);
+  padding: var(--s-2);
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--s-2);
   align-items: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.rule-item:hover {
+  border-color: var(--separator-strong);
 }
 
 #recurring-task-list .rule-item {
@@ -257,14 +297,19 @@
 }
 
 .upcoming-item {
-  border: 1px solid var(--line);
+  border: 1px solid var(--separator-soft);
   border-radius: 8px;
-  background: #fff;
-  padding: 9px;
+  background: var(--surface-item);
+  padding: var(--s-2);
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--s-2);
   align-items: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.upcoming-item:hover {
+  border-color: var(--separator-strong);
 }
 
 .rule-item.empty {
@@ -284,28 +329,41 @@
 }
 
 .rule-text strong {
-  font-size: 0.96rem;
+  font-size: 1rem;
+  font-family: var(--font-heading);
 }
 
 .rule-text span {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--fs-meta);
 }
 
 .rule-delete {
   min-width: 44px;
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-text);
+  border-color: var(--btn-danger-border);
+}
+
+.rule-delete:hover {
+  background: #fbe4de;
 }
 
 .rule-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--s-2);
   align-items: center;
 }
 
 .rule-edit {
-  background: #fff;
-  color: var(--text);
-  border-color: #b9aa91;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-color: var(--btn-secondary-border);
+}
+
+.rule-edit:hover {
+  background: #e2ebff;
+  border-color: #a9c0ef;
 }
 
 @media (max-width: 720px) {

@@ -1,0 +1,65 @@
+Version courante: v0.9.13
+
+Historique complet:
+
+v0.9.13
+- Etape 8: densite calibree (espacements et hauteurs harmonises, interactions a 44px minimum).
+- Etape 10: audit final de rythme visuel (suppression d'exceptions de gaps/paddings et alignement global des tokens).
+- Etape 9: micro-copy structurelle clarifiee (libelles plus directs et formulations homogenes).
+
+v0.9.12
+- Mise en place de l'etape 7: etats UI coherents (hover/focus/disabled/active) sur les composants interactifs.
+- Uniformisation des statuts via `data-state` (`info`, `success`, `error`) pour les messages du Planner et de la page Ajouter.
+- Harmonisation des transitions et retours visuels sur boutons, champs, listes et items de stats.
+
+v0.9.11
+- Mise en place de l'etape 5: reperes structurels legers sur toutes les pages (markers discrets, accents de section).
+- Ajout de marqueurs de structure sur les panneaux et titres pour mieux telegraphier la hierarchie sans surcharge.
+- Renforcement des reperes visuels sur les listes (regles/rendez-vous) avec des accents verticaux subtils.
+
+v0.9.10
+- Mise en place de l'etape 6: alignements et grille finaux sur l'ensemble des pages principales.
+- Unification de la largeur de layout a `1120px` (`auth`, `planner`, `ajouter`, `stats`).
+- Ajustement des formulaires rendez-vous pour des colonnes stables et des CTA alignes sur toute la largeur.
+
+v0.9.9
+- Mise en place de l'etape 4: systeme d'actions unifie (primaire, secondaire, ghost, destructive).
+- Standardisation des boutons via tokens (`btn-*`) pour coherence visuelle et comportement uniforme.
+- Alignement des actions sur les pages Planner et Ajouter (cloud, deplacement, edition, suppression).
+
+v0.9.8
+- Remplacement des icones de navigation par des icones Lucide (`layout-grid`, `plus`, `bar-chart-3`).
+- Ajout d'un initialiseur partage `lucide-init.js` et chargement Lucide sur les pages `quatorzaine`, `ajouter`, `stats`.
+- Harmonisation du style des icones de navigation pour un rendu vectoriel cohérent.
+
+v0.9.7
+- Application complete des etapes 2 et 3 de la "structure legere": surfaces/separateurs + hierarchie typo.
+- Unification des niveaux de surface (`surface-page`, `surface-panel`, `surface-item`) et des separateurs (`strong`, `soft`) sur les pages principales.
+- Harmonisation typographique via tokens (`fs-h1`, `fs-h2`, `fs-meta`, `fs-label`) et alignement des tailles de titres, metas, labels.
+
+v0.9.6
+- `versions.txt` devient un historique cumulatif (toutes les versions visibles dans ce fichier).
+- Regle de maintenance: ajouter une entree a chaque nouvelle version.
+
+v0.9.5
+- Integration de Lucide (CDN) sur la page Planner pour les actions cloud.
+- Remplacement des images cloud par des icones Lucide `cloud-download` et `cloud-upload`.
+- Ajustement de style pour afficher la forme du nuage de maniere lisible au premier coup d'oeil.
+
+v0.9.4
+- Normalisation du layout autour d'un systeme d'espacement 8px (4/8/12/16/24).
+- Harmonisation des separateurs et des surfaces (page/panneau/element) pour un rendu plus structure.
+- Alignement de la densite visuelle entre la page Planner et la page Ajouter.
+
+v0.9.3
+- Ajout du fichier `versions.txt` pour centraliser le numero de version.
+- Ajout d'un resume humain des changements entre la version courante et la precedente.
+
+v0.9.2
+- Ajustement des boutons cloud pour afficher les icones en entier et rendre la forme du nuage plus lisible.
+
+v0.9.1
+- Ajustement de la barre cloud: fond clair des boutons de transfert et contraste texte/icones ameliores.
+
+v0.9.0
+- Introduction d'un numero de version visible dans l'interface (sur la ligne du `h1`).

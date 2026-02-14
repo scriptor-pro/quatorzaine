@@ -39,6 +39,14 @@ let recurringTaskFormEl;
 let recurringTaskStatusEl;
 let recurringTaskListEl;
 
+function initLucideIcons() {
+  if (!window.lucide || typeof window.lucide.createIcons !== "function") {
+    return;
+  }
+
+  window.lucide.createIcons();
+}
+
 function dayKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -705,7 +713,7 @@ function setCloudStatus(message, isError = false) {
     return;
   }
   cloudStatusEl.textContent = message;
-  cloudStatusEl.style.color = isError ? "#b2452f" : "#6f6255";
+  cloudStatusEl.dataset.state = isError ? "error" : "info";
 }
 
 function isCloudConnected() {
@@ -796,7 +804,7 @@ async function pullFromCloud(silent = false, prefetchedRecord = null) {
     const record = prefetchedRecord || (await getSnapshotRecord(false));
     if (!record) {
       if (!silent) {
-        setCloudStatus("Aucun snapshot cloud trouvé. Rien à télécharger.");
+        setCloudStatus("Aucune donnée cloud trouvée. Rien à télécharger.");
       }
       isPullInProgress = false;
       return;
@@ -828,7 +836,7 @@ async function pullFromCloud(silent = false, prefetchedRecord = null) {
     render();
 
     if (!silent) {
-      setCloudStatus("Données cloud téléchargées vers cet appareil.");
+      setCloudStatus("Données cloud téléchargées sur cet appareil.");
     }
   } catch (error) {
     setCloudStatus(`Échec du téléchargement cloud: ${error.message}`, true);
@@ -960,7 +968,7 @@ function setRecurringTaskStatus(message, isError = false) {
   }
 
   recurringTaskStatusEl.textContent = message;
-  recurringTaskStatusEl.style.color = isError ? "#b2452f" : "#6f6255";
+  recurringTaskStatusEl.dataset.state = isError ? "error" : "info";
 }
 
 function renderRecurringTaskRules() {
@@ -1684,6 +1692,7 @@ function ensureCloudSession() {
 }
 
 async function initApp() {
+  initLucideIcons();
   bindPlannerControls();
 
   if (!ensureCloudSession()) {
