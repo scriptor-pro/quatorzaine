@@ -3,6 +3,7 @@ const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
 const RECURRING_TASK_STORAGE_KEY = "quatorzaine_recurring_tasks_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
+const ACTION_STATS_STORAGE_KEY = "quatorzaine_action_stats_v1";
 const HISTORY_MAX_DAYS = 3650;
 const DAY_COUNT = 14;
 const DAY_NAMES = [
@@ -472,6 +473,83 @@ function mergeScheduleIntoHistory(previousHistory, currentSchedule) {
   return merged.slice(merged.length - HISTORY_MAX_DAYS);
 }
 
+function normalizeActionStats(rawValue) {
+  if (!rawValue || typeof rawValue !== "object") {
+    return null;
+  }
+
+  const total = Number(rawValue.total);
+  const startedAt = String(rawValue.startedAt || "").trim();
+  const byDayRaw = rawValue.byDay && typeof rawValue.byDay === "object" ? rawValue.byDay : {};
+
+  const byDay = Object.entries(byDayRaw).reduce((acc, [key, value]) => {
+    if (!dayKeyToDate(key)) {
+      return acc;
+    }
+
+    const parsedValue = Math.max(0, Math.floor(Number(value) || 0));
+    if (parsedValue > 0) {
+      acc[key] = parsedValue;
+    }
+    return acc;
+  }, {});
+
+  return {
+    total: Number.isFinite(total) && total > 0 ? Math.floor(total) : 0,
+    startedAt,
+    byDay,
+  };
+}
+
+function loadActionStats() {
+  const savedRaw = localStorage.getItem(ACTION_STATS_STORAGE_KEY);
+  if (!savedRaw) {
+    return null;
+  }
+
+  try {
+    return normalizeActionStats(JSON.parse(savedRaw));
+  } catch (_error) {
+    return null;
+  }
+}
+
+function saveActionStats(actionStats) {
+  localStorage.setItem(ACTION_STATS_STORAGE_KEY, JSON.stringify(actionStats));
+}
+
+function mergeActionStats(primaryStats, secondaryStats) {
+  const primary = normalizeActionStats(primaryStats);
+  const secondary = normalizeActionStats(secondaryStats);
+
+  if (primary && secondary) {
+    return primary.total >= secondary.total ? primary : secondary;
+  }
+
+  return primary || secondary || null;
+}
+
+function trackUserAction() {
+  const now = new Date();
+  const key = dayKey(now);
+  const current = loadActionStats() || {
+    total: 0,
+    startedAt: now.toISOString(),
+    byDay: {},
+  };
+
+  const next = {
+    total: current.total + 1,
+    startedAt: current.startedAt || now.toISOString(),
+    byDay: {
+      ...current.byDay,
+      [key]: (current.byDay[key] || 0) + 1,
+    },
+  };
+
+  saveActionStats(next);
+}
+
 function parseCloudSnapshot(rawValue) {
   if (typeof rawValue === "string") {
     const text = rawValue.trim();
@@ -482,6 +560,7 @@ function parseCloudSnapshot(rawValue) {
         detachedAppointments: [],
         recurringTaskRules: [],
         history: [],
+        actionStats: null,
       };
     }
 
@@ -497,6 +576,7 @@ function parseCloudSnapshot(rawValue) {
             detachedAppointments: [],
             recurringTaskRules: [],
             history: [],
+            actionStats: null,
           };
         }
       }
@@ -508,6 +588,7 @@ function parseCloudSnapshot(rawValue) {
         detachedAppointments: [],
         recurringTaskRules: [],
         history: [],
+        actionStats: null,
       };
     }
   }
@@ -519,6 +600,7 @@ function parseCloudSnapshot(rawValue) {
       detachedAppointments: [],
       recurringTaskRules: [],
       history: [],
+      actionStats: null,
     };
   }
 
@@ -535,6 +617,7 @@ function parseCloudSnapshot(rawValue) {
         ? rawValue.recurringTaskRules
         : [],
       history: Array.isArray(rawValue.history) ? rawValue.history : [],
+      actionStats: normalizeActionStats(rawValue.actionStats),
     };
   }
 
@@ -544,6 +627,7 @@ function parseCloudSnapshot(rawValue) {
     detachedAppointments: [],
     recurringTaskRules: [],
     history: [],
+    actionStats: null,
   };
 }
 
@@ -647,6 +731,7 @@ function serializeSnapshot() {
     detachedAppointments,
     recurringTaskRules,
     history,
+    actionStats: loadActionStats(),
   });
 }
 
@@ -819,6 +904,10 @@ async function pullFromCloud(silent = false, prefetchedRecord = null) {
     recurringTaskRules = normalizeRecurringTaskRules(snapshot.recurringTaskRules);
     syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
     history = mergeScheduleIntoHistory(normalizeHistory(snapshot.history), schedule);
+    const mergedActionStats = mergeActionStats(
+      snapshot.actionStats,
+      loadActionStats(),
+    );
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
     localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
     localStorage.setItem(
@@ -830,6 +919,9 @@ async function pullFromCloud(silent = false, prefetchedRecord = null) {
       JSON.stringify(recurringTaskRules),
     );
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    if (mergedActionStats) {
+      saveActionStats(mergedActionStats);
+    }
     cloudLastUpdatedAt = String(record.updated || "");
     hasPendingLocalChanges = false;
     renderRecurringTaskRules();
@@ -1009,6 +1101,7 @@ function renderRecurringTaskRules() {
       recurringTaskRules = recurringTaskRules.filter(
         (candidate) => candidate.id !== rule.id,
       );
+      trackUserAction();
       syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
       saveRecurringTaskRules();
       saveSchedule();
@@ -1117,6 +1210,7 @@ function bindRecurringTaskControls() {
       weekdays,
     });
 
+    trackUserAction();
     syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
     saveRecurringTaskRules();
     saveSchedule();
@@ -1252,6 +1346,7 @@ function createTaskElement(dayKeyValue, task) {
     const day = schedule.find((d) => d.key === dayKeyValue);
     const target = day.tasks.find((t) => t.id === task.id);
     target.done = check.checked;
+    trackUserAction();
     saveSchedule();
     render();
     if (target.done) {
@@ -1317,6 +1412,7 @@ function createTaskElement(dayKeyValue, task) {
 
     const [moved] = fromDay.tasks.splice(fromIndex, 1);
     toDay.tasks.push(moved);
+    trackUserAction();
     saveSchedule();
     render();
   });
@@ -1356,6 +1452,7 @@ function createTaskElement(dayKeyValue, task) {
     }
     const day = schedule.find((d) => d.key === dayKeyValue);
     day.tasks = day.tasks.filter((t) => t.id !== task.id);
+    trackUserAction();
     saveSchedule();
     render();
   });
@@ -1433,6 +1530,7 @@ function createAppointmentElement(dayKeyValue, appointment) {
       detachedAppointments = detachedAppointments.filter(
         (candidate) => candidate.id !== appointment.id,
       );
+      trackUserAction();
       saveDetachedAppointments();
       render();
       return;
@@ -1440,6 +1538,7 @@ function createAppointmentElement(dayKeyValue, appointment) {
 
     const day = schedule.find((d) => d.key === dayKeyValue);
     day.appointments = day.appointments.filter((a) => a.id !== appointment.id);
+    trackUserAction();
     saveSchedule();
     render();
   });
@@ -1510,6 +1609,7 @@ function createDayCard(day) {
 
     const [moved] = fromDay.tasks.splice(fromIndex, 1);
     toDay.tasks.push(moved);
+    trackUserAction();
     saveSchedule();
     render();
   });
@@ -1541,6 +1641,7 @@ function createDayCard(day) {
       return;
     }
     day.tasks.push({ id: makeId(), text, done: false });
+    trackUserAction();
     saveSchedule();
     render();
   });
@@ -1603,6 +1704,7 @@ function createDayCard(day) {
       text,
       durationMinutes: Math.round(durationMinutes),
     });
+    trackUserAction();
     saveSchedule();
     render();
   });
@@ -1645,6 +1747,7 @@ function handleLogout() {
     localStorage.removeItem(DETACHED_APPOINTMENTS_STORAGE_KEY);
     localStorage.removeItem(RECURRING_TASK_STORAGE_KEY);
     localStorage.removeItem(HISTORY_STORAGE_KEY);
+    localStorage.removeItem(ACTION_STATS_STORAGE_KEY);
   }
 
   redirectToLogin();
@@ -1711,6 +1814,10 @@ async function initApp() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
   history = mergeScheduleIntoHistory(loadHistory(), schedule);
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  const existingActionStats = loadActionStats();
+  if (!existingActionStats) {
+    saveActionStats({ total: 0, startedAt: new Date().toISOString(), byDay: {} });
+  }
   bindRecurringTaskControls();
   render();
   updateCloudButtons();

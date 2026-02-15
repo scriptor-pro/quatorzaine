@@ -1,5 +1,6 @@
 const STORAGE_KEY = "quatorzaine_schedule_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
+const ACTION_STATS_STORAGE_KEY = "quatorzaine_action_stats_v1";
 const DAY_NAMES = [
   "Dimanche",
   "Lundi",
@@ -54,6 +55,47 @@ function loadSchedule() {
     return Array.isArray(parsed) ? parsed : [];
   } catch (_error) {
     return [];
+  }
+}
+
+function normalizeActionStats(rawValue) {
+  if (!rawValue || typeof rawValue !== "object") {
+    return null;
+  }
+
+  const total = Number(rawValue.total);
+  const startedAt = String(rawValue.startedAt || "").trim();
+  const byDayRaw = rawValue.byDay && typeof rawValue.byDay === "object" ? rawValue.byDay : {};
+
+  const byDay = Object.entries(byDayRaw).reduce((acc, [key, value]) => {
+    if (!parseDayKeyToDate(key)) {
+      return acc;
+    }
+
+    const parsedValue = Math.max(0, Math.floor(Number(value) || 0));
+    if (parsedValue > 0) {
+      acc[key] = parsedValue;
+    }
+    return acc;
+  }, {});
+
+  return {
+    total: Number.isFinite(total) && total > 0 ? Math.floor(total) : 0,
+    startedAt,
+    byDay,
+  };
+}
+
+function loadActionStats() {
+  const savedRaw = localStorage.getItem(ACTION_STATS_STORAGE_KEY);
+  if (!savedRaw) {
+    return null;
+  }
+
+  try {
+    return normalizeActionStats(JSON.parse(savedRaw));
+  } catch (_error) {
+    return null;
   }
 }
 
@@ -219,10 +261,40 @@ function renderStats() {
   const streakRangeEl = document.getElementById("streak-range");
   const currentStreakValueEl = document.getElementById("current-streak-value");
   const currentStreakRangeEl = document.getElementById("current-streak-range");
+  const actionsTodayValueEl = document.getElementById("actions-today-value");
+  const actionsTodayRangeEl = document.getElementById("actions-today-range");
+  const actionsTotalValueEl = document.getElementById("actions-total-value");
+  const actionsTotalRangeEl = document.getElementById("actions-total-range");
   const schedule = loadSchedule();
+  const actionStats = loadActionStats();
   const rows = createRankedRows(schedule);
   const streak = findLongestDoneStreak(schedule);
   const currentStreak = findCurrentDoneStreak(schedule);
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const actionsToday = actionStats?.byDay?.[todayKey] || 0;
+  const totalActions = actionStats?.total || 0;
+
+  if (actionsTodayValueEl && actionsTodayRangeEl && actionsTotalValueEl && actionsTotalRangeEl) {
+    actionsTodayValueEl.textContent = `${actionsToday} action(s)`;
+    actionsTodayRangeEl.textContent =
+      actionsToday === 0
+        ? "Aucune action enregistrée aujourd'hui."
+        : "Compteur mis à jour à chaque modification de vos données.";
+
+    actionsTotalValueEl.textContent = `${totalActions} action(s)`;
+    if (actionStats?.startedAt) {
+      const startedAt = new Date(actionStats.startedAt);
+      if (!Number.isNaN(startedAt.getTime())) {
+        actionsTotalRangeEl.textContent = `Suivi actif depuis le ${formatDateLabel(startedAt)}.`;
+      } else {
+        actionsTotalRangeEl.textContent = "Suivi actif depuis le début du compteur local/cloud.";
+      }
+    } else {
+      actionsTotalRangeEl.textContent =
+        "Le compteur d'actions commence à partir de cette version.";
+    }
+  }
 
   if (streak.length === 0) {
     streakValueEl.textContent = "0 jour actif";

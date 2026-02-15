@@ -20,7 +20,7 @@
   <body>
     <a class="skip-link" href="#main-content">Aller au contenu principal</a>
     <main id="main-content" class="stats-shell">
-      <h1>Statistiques <span class="app-version">v0.9.13</span></h1>
+      <h1>Statistiques <span class="app-version">v0.9.14</span></h1>
       <p class="subtitle">Top 10 des journées avec le plus de tâches terminées</p>
       <nav class="app-nav" aria-label="Navigation principale">
         <a class="app-nav-link" href="quatorzaine.html"
@@ -55,6 +55,21 @@
               <h4>Série en cours</h4>
               <p id="current-streak-value" class="streak-value"></p>
               <p id="current-streak-range" class="streak-range"></p>
+            </section>
+          </div>
+        </article>
+        <article class="streak-card" aria-label="Compteur d'actions">
+          <h3>Actions suivies</h3>
+          <div class="streak-grid">
+            <section class="streak-metric" aria-label="Actions aujourd'hui">
+              <h4>Aujourd'hui</h4>
+              <p id="actions-today-value" class="streak-value"></p>
+              <p id="actions-today-range" class="streak-range"></p>
+            </section>
+            <section class="streak-metric" aria-label="Actions cumulées">
+              <h4>Total cumulé</h4>
+              <p id="actions-total-value" class="streak-value"></p>
+              <p id="actions-total-range" class="streak-range"></p>
             </section>
           </div>
         </article>

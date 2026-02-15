@@ -403,7 +403,7 @@ code {
 .day-card {
   --day-color: var(--line);
   border: 1px solid var(--separator-strong);
-  border-top: 5px solid var(--day-color);
+  border-top: 3px solid var(--day-color);
   border-radius: 10px;
   background: var(--surface-panel);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
@@ -411,18 +411,6 @@ code {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
-  position: relative;
-}
-
-.day-card::before {
-  content: "";
-  position: absolute;
-  right: var(--s-3);
-  top: -1px;
-  width: 20px;
-  height: 3px;
-  border-radius: 0 0 4px 4px;
-  background: color-mix(in srgb, var(--day-color) 75%, #ffffff);
 }
 
 .day-chip {

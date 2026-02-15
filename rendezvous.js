@@ -3,6 +3,7 @@ const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
 const RECURRING_TASK_STORAGE_KEY = "quatorzaine_recurring_tasks_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
+const ACTION_STATS_STORAGE_KEY = "quatorzaine_action_stats_v1";
 const HISTORY_MAX_DAYS = 3650;
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
@@ -378,6 +379,83 @@ function saveDetachedAppointments() {
   queueCloudSave();
 }
 
+function normalizeActionStats(rawValue) {
+  if (!rawValue || typeof rawValue !== "object") {
+    return null;
+  }
+
+  const total = Number(rawValue.total);
+  const startedAt = String(rawValue.startedAt || "").trim();
+  const byDayRaw = rawValue.byDay && typeof rawValue.byDay === "object" ? rawValue.byDay : {};
+
+  const byDay = Object.entries(byDayRaw).reduce((acc, [key, value]) => {
+    if (!parseDayKeyToDate(key)) {
+      return acc;
+    }
+
+    const parsedValue = Math.max(0, Math.floor(Number(value) || 0));
+    if (parsedValue > 0) {
+      acc[key] = parsedValue;
+    }
+    return acc;
+  }, {});
+
+  return {
+    total: Number.isFinite(total) && total > 0 ? Math.floor(total) : 0,
+    startedAt,
+    byDay,
+  };
+}
+
+function loadActionStats() {
+  const savedRaw = localStorage.getItem(ACTION_STATS_STORAGE_KEY);
+  if (!savedRaw) {
+    return null;
+  }
+
+  try {
+    return normalizeActionStats(JSON.parse(savedRaw));
+  } catch (_error) {
+    return null;
+  }
+}
+
+function saveActionStats(actionStats) {
+  localStorage.setItem(ACTION_STATS_STORAGE_KEY, JSON.stringify(actionStats));
+}
+
+function mergeActionStats(primaryStats, secondaryStats) {
+  const primary = normalizeActionStats(primaryStats);
+  const secondary = normalizeActionStats(secondaryStats);
+
+  if (primary && secondary) {
+    return primary.total >= secondary.total ? primary : secondary;
+  }
+
+  return primary || secondary || null;
+}
+
+function trackUserAction() {
+  const now = new Date();
+  const key = dayKey(now);
+  const current = loadActionStats() || {
+    total: 0,
+    startedAt: now.toISOString(),
+    byDay: {},
+  };
+
+  const next = {
+    total: current.total + 1,
+    startedAt: current.startedAt || now.toISOString(),
+    byDay: {
+      ...current.byDay,
+      [key]: (current.byDay[key] || 0) + 1,
+    },
+  };
+
+  saveActionStats(next);
+}
+
 function serializeSnapshot() {
   return JSON.stringify({
     schedule,
@@ -385,6 +463,7 @@ function serializeSnapshot() {
     detachedAppointments,
     recurringTaskRules: recurringTaskRulesSnapshot,
     history,
+    actionStats: loadActionStats(),
   });
 }
 
@@ -490,6 +569,7 @@ function parseCloudSnapshot(rawValue) {
         detachedAppointments: [],
         recurringTaskRules: [],
         history: [],
+        actionStats: null,
       };
     }
 
@@ -505,6 +585,7 @@ function parseCloudSnapshot(rawValue) {
             detachedAppointments: [],
             recurringTaskRules: [],
             history: [],
+            actionStats: null,
           };
         }
       }
@@ -517,6 +598,7 @@ function parseCloudSnapshot(rawValue) {
         detachedAppointments: [],
         recurringTaskRules: [],
         history: [],
+        actionStats: null,
       };
     }
   }
@@ -528,6 +610,7 @@ function parseCloudSnapshot(rawValue) {
       detachedAppointments: [],
       recurringTaskRules: [],
       history: [],
+      actionStats: null,
     };
   }
 
@@ -544,6 +627,7 @@ function parseCloudSnapshot(rawValue) {
         ? rawValue.recurringTaskRules
         : [],
       history: Array.isArray(rawValue.history) ? rawValue.history : [],
+      actionStats: normalizeActionStats(rawValue.actionStats),
     };
   }
 
@@ -553,6 +637,7 @@ function parseCloudSnapshot(rawValue) {
     detachedAppointments: [],
     recurringTaskRules: [],
     history: [],
+    actionStats: null,
   };
 }
 
@@ -590,6 +675,10 @@ async function pullSnapshotFromCloud(silent = false, prefetchedRecord = null) {
     );
     syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
     history = mergeScheduleIntoHistory(normalizeHistory(snapshot.history), schedule);
+    const mergedActionStats = mergeActionStats(
+      snapshot.actionStats,
+      loadActionStats(),
+    );
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
     localStorage.setItem(RECURRING_STORAGE_KEY, JSON.stringify(recurringRules));
@@ -599,6 +688,9 @@ async function pullSnapshotFromCloud(silent = false, prefetchedRecord = null) {
     );
     saveRecurringTaskRulesSnapshot();
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+    if (mergedActionStats) {
+      saveActionStats(mergedActionStats);
+    }
 
     cloudLastUpdatedAt = String(record.updated || "");
     hasPendingLocalChanges = false;
@@ -859,6 +951,7 @@ function renderUpcomingAppointments() {
       detachedAppointments = detachedAppointments.filter(
         (candidate) => candidate.id !== appointment.id,
       );
+      trackUserAction();
       saveDetachedAppointments();
       renderUpcomingAppointments();
       setStatus("Rendez-vous à venir supprimé.");
@@ -911,6 +1004,7 @@ function renderRulesList() {
         resetAppointmentFormToCreateMode();
       }
       recurringRules = recurringRules.filter((candidate) => candidate.id !== rule.id);
+      trackUserAction();
       saveRecurringRules();
       renderRulesList();
       setStatus("Rendez-vous en récurrence supprimé.");
@@ -997,6 +1091,7 @@ function renderRecurringTaskRules() {
       recurringTaskRulesSnapshot = recurringTaskRulesSnapshot.filter(
         (candidate) => candidate.id !== rule.id,
       );
+      trackUserAction();
       syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
       saveRecurringTaskRulesSnapshot();
       saveSchedule();
@@ -1100,6 +1195,7 @@ function bindRecurringTaskForm() {
       weekdays,
     });
 
+    trackUserAction();
     syncRecurringTasksIntoSchedule(schedule, recurringTaskRulesSnapshot);
     saveRecurringTaskRulesSnapshot();
     saveSchedule();
@@ -1283,6 +1379,7 @@ function bindForm() {
           text,
           durationMinutes: Math.round(durationMinutes),
         });
+        trackUserAction();
         saveSchedule();
         setStatus("Rendez-vous ponctuel enregistré dans la quatorzaine.");
       } else {
@@ -1293,6 +1390,7 @@ function bindForm() {
           text,
           durationMinutes: Math.round(durationMinutes),
         });
+        trackUserAction();
         saveDetachedAppointments();
         setStatus(
           "Rendez-vous ponctuel enregistré hors quatorzaine. Il apparaîtra au bon moment.",
@@ -1348,6 +1446,7 @@ function bindForm() {
       recurringRules.push(nextRule);
     }
 
+    trackUserAction();
     saveRecurringRules();
     renderRulesList();
     const wasEditing = !!editingRecurringRuleId;
@@ -1370,6 +1469,10 @@ async function initApp() {
   saveRecurringTaskRulesSnapshot();
   history = mergeScheduleIntoHistory(loadHistory(), schedule);
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  const existingActionStats = loadActionStats();
+  if (!existingActionStats) {
+    saveActionStats({ total: 0, startedAt: new Date().toISOString(), byDay: {} });
+  }
   initPocketBase(localStorage.getItem(PB_URL_KEY));
   bindForm();
   bindRecurringTaskForm();
