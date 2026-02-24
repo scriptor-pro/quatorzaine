@@ -710,6 +710,10 @@ body.layout-compact .appointment-item {
   text-decoration: line-through;
 }
 
+.task-item:not(.done-compact) .task-text {
+  font-weight: 600;
+}
+
 .task-item.done-compact {
   background: #eef1f4;
   border-color: #cfd6df;
@@ -722,7 +726,7 @@ body.layout-compact .appointment-item {
 .task-item.done-compact .task-text {
   text-decoration: none;
   color: #3f4650;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .task-main-done {
