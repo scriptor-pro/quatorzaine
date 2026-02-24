@@ -711,7 +711,7 @@ body.layout-compact .appointment-item {
 }
 
 .task-item:not(.done-compact) .task-text {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .task-item.done-compact {
