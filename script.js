@@ -1792,33 +1792,7 @@ function createDayCard(day) {
     taskList.append(empty);
   }
 
-  const taskForm = document.createElement("form");
-  taskForm.className = "inline-form task-form";
-  const taskInputId = `task-input-${day.key}`;
-  taskForm.innerHTML = `
-    <label class="visually-hidden" for="${taskInputId}">Nouvelle tâche pour ${day.dayName} ${day.dateLabel}</label>
-    <input id="${taskInputId}" name="taskText" type="text" placeholder="Nouvelle tâche" required>
-    <button type="submit">Ajouter</button>
-  `;
-  taskForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const formData = new FormData(taskForm);
-    const text = String(formData.get("taskText") || "").trim();
-    if (!text) {
-      return;
-    }
-    day.tasks.push({
-      id: makeId(),
-      text,
-      done: false,
-      createdAt: new Date().toISOString(),
-    });
-    trackUserAction();
-    saveSchedule();
-    render();
-  });
-
-  tasksSection.append(taskList, taskForm);
+  tasksSection.append(taskList);
 
   const appointmentsSection = document.createElement("div");
   appointmentsSection.className = "section";
@@ -1836,40 +1810,141 @@ function createDayCard(day) {
     appointmentList.append(empty);
   }
 
-  const appointmentForm = document.createElement("form");
-  appointmentForm.className = "inline-form appointment-form";
-  const timeInputId = `appointment-time-${day.key}`;
-  const durationInputId = `appointment-duration-${day.key}`;
-  const textInputId = `appointment-text-${day.key}`;
-  appointmentForm.innerHTML = `
-    <div class="field-group appointment-description-group">
-      <label class="field-label" for="${textInputId}">Description</label>
-      <input id="${textInputId}" name="appointmentText" type="text" placeholder="Rendez-vous" required>
+  appointmentsSection.append(appointmentList);
+
+  const quickAddSection = document.createElement("div");
+  quickAddSection.className = "section quick-add-section";
+
+  const quickAddToggle = document.createElement("button");
+  quickAddToggle.type = "button";
+  quickAddToggle.className = "quick-add-toggle";
+  quickAddToggle.textContent = "Ajouter";
+  quickAddToggle.setAttribute(
+    "aria-label",
+    `Ajouter une tâche ou un rendez-vous pour ${day.dayName} ${day.dateLabel}`,
+  );
+
+  const quickAddForm = document.createElement("form");
+  quickAddForm.className = "quick-add-form";
+  const quickTextId = `quick-text-${day.key}`;
+  const quickTimeId = `quick-time-${day.key}`;
+  const quickDurationId = `quick-duration-${day.key}`;
+  quickAddForm.innerHTML = `
+    <label class="visually-hidden" for="${quickTextId}">Que voulez-vous ajouter pour ${day.dayName} ${day.dateLabel}</label>
+    <input id="${quickTextId}" name="quickText" type="text" placeholder="Ex: finaliser la présentation" required>
+    <div class="quick-add-modes" role="group" aria-label="Type d'ajout">
+      <button type="button" class="quick-mode active" data-mode="task">Tâche</button>
+      <button type="button" class="quick-mode" data-mode="appointment">Rendez-vous</button>
     </div>
-    <div class="field-group appointment-time-group">
-      <label class="field-label" for="${timeInputId}">Heure</label>
-      <input id="${timeInputId}" name="appointmentTime" type="time" required>
+    <div class="quick-add-rdv-fields" data-role="appointment-fields">
+      <div class="field-group">
+        <label class="field-label" for="${quickTimeId}">Heure</label>
+        <input id="${quickTimeId}" name="quickTime" type="time">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="${quickDurationId}">Durée (min)</label>
+        <input id="${quickDurationId}" name="quickDuration" type="number" min="5" step="5" value="60">
+      </div>
     </div>
-    <div class="field-group appointment-duration-group">
-      <label class="field-label" for="${durationInputId}">Durée (min)</label>
-      <input id="${durationInputId}" name="appointmentDuration" type="number" min="5" step="5" value="60" required>
+    <div class="quick-add-actions">
+      <button type="submit" data-role="submit">Ajouter la tâche</button>
+      <button type="button" class="ghost" data-role="cancel">Fermer</button>
     </div>
-    <button type="submit">Fixer</button>
   `;
-  appointmentForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const formData = new FormData(appointmentForm);
-    const time = String(formData.get("appointmentTime") || "").trim();
-    const durationMinutes = Number(formData.get("appointmentDuration") || 0);
-    const text = String(formData.get("appointmentText") || "").trim();
-    if (
-      !time ||
-      !text ||
-      !Number.isFinite(durationMinutes) ||
-      durationMinutes <= 0
-    ) {
+
+  const appointmentFieldsEl = quickAddForm.querySelector(
+    '[data-role="appointment-fields"]',
+  );
+  const submitBtnEl = quickAddForm.querySelector('[data-role="submit"]');
+  const cancelBtnEl = quickAddForm.querySelector('[data-role="cancel"]');
+  const quickTextEl = quickAddForm.querySelector('[name="quickText"]');
+  const modeButtons = quickAddForm.querySelectorAll(".quick-mode");
+  let quickAddMode = "task";
+
+  function updateQuickAddMode(nextMode) {
+    quickAddMode = nextMode === "appointment" ? "appointment" : "task";
+    const isAppointment = quickAddMode === "appointment";
+
+    modeButtons.forEach((btn) => {
+      const isActive = btn.dataset.mode === quickAddMode;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-pressed", String(isActive));
+    });
+
+    if (appointmentFieldsEl) {
+      appointmentFieldsEl.classList.toggle("show", isAppointment);
+    }
+
+    if (quickTextEl) {
+      quickTextEl.placeholder = isAppointment
+        ? "Ex: rendez-vous dentiste"
+        : "Ex: finaliser la présentation";
+    }
+
+    if (submitBtnEl) {
+      submitBtnEl.textContent = isAppointment
+        ? "Ajouter le rendez-vous"
+        : "Ajouter la tâche";
+    }
+  }
+
+  function closeQuickAdd() {
+    quickAddForm.classList.remove("open");
+    quickAddForm.reset();
+    updateQuickAddMode("task");
+  }
+
+  modeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      updateQuickAddMode(btn.dataset.mode || "task");
+    });
+  });
+
+  quickAddToggle.addEventListener("click", () => {
+    const willOpen = !quickAddForm.classList.contains("open");
+    if (!willOpen) {
+      closeQuickAdd();
       return;
     }
+
+    quickAddForm.classList.add("open");
+    updateQuickAddMode("task");
+    if (quickTextEl) {
+      quickTextEl.focus();
+    }
+  });
+
+  if (cancelBtnEl) {
+    cancelBtnEl.addEventListener("click", closeQuickAdd);
+  }
+
+  quickAddForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(quickAddForm);
+    const text = String(formData.get("quickText") || "").trim();
+    if (!text) {
+      return;
+    }
+
+    if (quickAddMode === "task") {
+      day.tasks.push({
+        id: makeId(),
+        text,
+        done: false,
+        createdAt: new Date().toISOString(),
+      });
+      trackUserAction();
+      saveSchedule();
+      render();
+      return;
+    }
+
+    const time = String(formData.get("quickTime") || "").trim();
+    const durationMinutes = Number(formData.get("quickDuration") || 0);
+    if (!time || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+      return;
+    }
+
     day.appointments.push({
       id: makeId(),
       time,
@@ -1881,9 +1956,9 @@ function createDayCard(day) {
     render();
   });
 
-  appointmentsSection.append(appointmentList, appointmentForm);
+  quickAddSection.append(quickAddToggle, quickAddForm);
 
-  card.append(dayHeading, tasksSection, appointmentsSection);
+  card.append(dayHeading, tasksSection, appointmentsSection, quickAddSection);
   return card;
 }
 

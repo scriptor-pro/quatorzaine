@@ -793,8 +793,76 @@ body.layout-compact .task-actions {
   margin-top: var(--s-2);
 }
 
+.quick-add-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.quick-add-toggle {
+  width: 100%;
+}
+
+.quick-add-form {
+  display: none;
+  gap: var(--s-2);
+}
+
+.quick-add-form.open {
+  display: grid;
+}
+
+.quick-add-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.quick-mode {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-color: var(--btn-secondary-border);
+}
+
+.quick-mode:hover {
+  background: #e2ebff;
+  border-color: #a9c0ef;
+}
+
+.quick-mode.active {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-border);
+}
+
+.quick-add-rdv-fields {
+  display: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+
+.quick-add-rdv-fields.show {
+  display: grid;
+}
+
+.quick-add-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-2);
+}
+
 body.layout-compact .inline-form {
   margin-top: 6px;
+  gap: 6px;
+}
+
+body.layout-compact .quick-add-section {
+  gap: 6px;
+}
+
+body.layout-compact .quick-add-modes,
+body.layout-compact .quick-add-rdv-fields,
+body.layout-compact .quick-add-actions {
   gap: 6px;
 }
 
@@ -988,6 +1056,10 @@ button.delete.recurring-manage {
   }
 
   .appointment-form {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-add-rdv-fields {
     grid-template-columns: 1fr;
   }
 
