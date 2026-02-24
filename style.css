@@ -710,6 +710,25 @@ body.layout-compact .appointment-item {
   text-decoration: line-through;
 }
 
+.task-item.done-compact {
+  background: #eef1f4;
+  border-color: #cfd6df;
+  color: #3f4650;
+  opacity: 1;
+  min-height: 42px;
+  justify-content: center;
+}
+
+.task-item.done-compact .task-text {
+  text-decoration: none;
+  color: #3f4650;
+  font-weight: 600;
+}
+
+.task-main-done {
+  align-items: center;
+}
+
 .task-item.recurring-task {
   border-style: dashed;
 }

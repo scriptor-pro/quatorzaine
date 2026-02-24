@@ -462,19 +462,32 @@ function mergeScheduleIntoHistory(previousHistory, currentSchedule) {
       return;
     }
 
+    const currentTasks = Array.isArray(day.tasks)
+      ? day.tasks.map((task) => ({
+          id: typeof task?.id === "string" && task.id ? task.id : makeId(),
+          text: String(task?.text || ""),
+          done: !!task?.done,
+        }))
+      : [];
+
+    const previousDay = byKey.get(key);
+    const previousDoneTasks = Array.isArray(previousDay?.tasks)
+      ? previousDay.tasks.filter((task) => {
+          if (!task?.done || !task?.id) {
+            return false;
+          }
+
+          return !currentTasks.some((currentTask) => currentTask.id === task.id);
+        })
+      : [];
+
     byKey.set(key, {
       key,
       weekdayIndex:
         Number.isInteger(day.weekdayIndex) && day.weekdayIndex >= 0 && day.weekdayIndex <= 6
           ? day.weekdayIndex
           : keyDate.getDay(),
-      tasks: Array.isArray(day.tasks)
-        ? day.tasks.map((task) => ({
-            id: typeof task?.id === "string" && task.id ? task.id : makeId(),
-            text: String(task?.text || ""),
-            done: !!task?.done,
-          }))
-        : [],
+      tasks: currentTasks.concat(previousDoneTasks),
     });
   });
 
@@ -1476,20 +1489,24 @@ function getAppointmentsForDay(day) {
 
 function createTaskElement(dayKeyValue, task) {
   const isRecurringTask = !!task.isRecurringOccurrence;
+  const isDoneTask = !!task.done;
   const taskAge = getTaskAgeInfo(task, dayKeyValue);
   const li = document.createElement("li");
   li.className = `task-item${task.done ? " done" : ""}`;
+  if (isDoneTask) {
+    li.classList.add("done-compact");
+  }
   if (isRecurringTask) {
     li.classList.add("recurring-task");
   } else {
     li.classList.add(`task-age-stage-${taskAge.stage}`);
   }
-  li.draggable = !isRecurringTask;
+  li.draggable = !isRecurringTask && !isDoneTask;
   li.dataset.taskId = task.id;
   li.dataset.dayKey = dayKeyValue;
 
   li.addEventListener("dragstart", (event) => {
-    if (isRecurringTask) {
+    if (isRecurringTask || isDoneTask) {
       event.preventDefault();
       return;
     }
@@ -1535,6 +1552,14 @@ function createTaskElement(dayKeyValue, task) {
     textWrap.append(badge);
   }
   text.append(textWrap);
+
+  if (isDoneTask) {
+    main.classList.add("task-main-done");
+    main.append(text);
+    li.append(main);
+    li.title = "Tache terminee";
+    return li;
+  }
 
   main.append(check, text);
   li.title = isRecurringTask ? "Tache recurrente" : `Tache ${taskAge.label}`;
