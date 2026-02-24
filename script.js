@@ -1807,9 +1807,13 @@ function createDayCard(day) {
   });
 
   if (day.tasks.length > 0) {
-    day.tasks.forEach((task) =>
-      taskList.append(createTaskElement(day.key, task)),
-    );
+    const orderedTasks = day.tasks
+      .filter((task) => task && !task.done)
+      .concat(day.tasks.filter((task) => task && task.done));
+
+    orderedTasks.forEach((task) => {
+      taskList.append(createTaskElement(day.key, task));
+    });
   } else {
     const empty = document.createElement("li");
     empty.className = "empty-marker";
