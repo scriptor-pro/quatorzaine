@@ -1436,6 +1436,8 @@ function createTaskElement(dayKeyValue, task) {
   li.className = `task-item${task.done ? " done" : ""}`;
   if (isRecurringTask) {
     li.classList.add("recurring-task");
+  } else {
+    li.classList.add(`task-age-stage-${taskAge.stage}`);
   }
   li.draggable = !isRecurringTask;
   li.dataset.taskId = task.id;
@@ -1490,15 +1492,7 @@ function createTaskElement(dayKeyValue, task) {
   text.append(textWrap);
 
   main.append(check, text);
-
-  if (!isRecurringTask) {
-    const ageRibbon = document.createElement("p");
-    ageRibbon.className = `task-age-ribbon age-stage-${taskAge.stage}`;
-    ageRibbon.textContent = taskAge.symbol;
-    ageRibbon.title = `Tache ${taskAge.label}`;
-    ageRibbon.setAttribute("aria-label", `Tache ${taskAge.label}`);
-    main.append(ageRibbon);
-  }
+  li.title = isRecurringTask ? "Tache recurrente" : `Tache ${taskAge.label}`;
 
   const actions = document.createElement("div");
   actions.className = "task-actions";
