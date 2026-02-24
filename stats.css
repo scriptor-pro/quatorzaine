@@ -3,10 +3,15 @@
   margin: 0 auto;
 }
 
+.stats-shell .subtitle {
+  line-height: 1.4;
+  max-width: 62ch;
+}
+
 .stats-panel {
   border: 1px solid var(--separator-strong);
   border-radius: 14px;
-  background: var(--surface-panel);
+  background: linear-gradient(180deg, #fffdf8 0%, var(--surface-panel) 100%);
   padding: var(--s-3);
   box-shadow: 0 10px 24px rgba(38, 29, 18, 0.08);
 }
@@ -32,7 +37,7 @@
 .streak-card {
   border: 1px solid var(--separator-soft);
   border-radius: 10px;
-  background: var(--surface-item);
+  background: linear-gradient(180deg, #ffffff 0%, #fffcf6 100%);
   padding: var(--s-3);
   margin-bottom: var(--s-3);
 }
@@ -41,6 +46,7 @@
   margin: 0 0 var(--s-1);
   font-size: 1rem;
   font-family: var(--font-heading);
+  letter-spacing: 0.01em;
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
@@ -64,7 +70,7 @@
   border: 1px solid var(--separator-soft);
   border-radius: 8px;
   padding: var(--s-2);
-  background: #fdfcf8;
+  background: #fffdfa;
 }
 
 .streak-metric h4 {
@@ -72,7 +78,7 @@
   font-size: var(--fs-label);
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .streak-value {
@@ -90,6 +96,7 @@
   line-height: 1;
   font-weight: 800;
   letter-spacing: -0.01em;
+  color: #1f5d34;
 }
 
 .streak-value-label {
@@ -101,6 +108,7 @@
   margin: var(--s-1) 0 0;
   color: var(--muted);
   font-size: var(--fs-meta);
+  line-height: 1.35;
 }
 
 .stats-list {
@@ -122,6 +130,10 @@
   background: var(--surface-item);
   padding: var(--s-3);
   transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.stats-item strong {
+  line-height: 1.2;
 }
 
 .stats-item:hover {
@@ -155,15 +167,27 @@
 .stats-date {
   color: var(--muted);
   font-size: var(--fs-meta);
+  line-height: 1.35;
 }
 
 .stats-count {
   font-weight: 700;
   color: #2d6a39;
+  font-size: 1.02rem;
 }
 
 @media (max-width: 720px) {
   .streak-grid {
     grid-template-columns: 1fr;
+  }
+
+  .streak-value {
+    white-space: normal;
+    row-gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  .streak-value-label {
+    font-size: 0.98rem;
   }
 }

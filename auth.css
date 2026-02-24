@@ -35,6 +35,9 @@ body {
   min-height: 100vh;
   font-family: var(--font-body);
   color: var(--text);
+  line-height: 1.45;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   background:
     radial-gradient(1200px 500px at 0% 0%, #fff8e8 0%, transparent 60%),
     radial-gradient(900px 500px at 100% 0%, #e8f5fb 0%, transparent 55%),
@@ -66,6 +69,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--s-4);
+}
+
+.auth-header {
+  max-width: 72ch;
 }
 
 .bauhaus-ribbon {
@@ -107,6 +114,7 @@ body {
   font-size: var(--fs-h1);
   font-family: var(--font-heading);
   font-weight: 700;
+  letter-spacing: 0.015em;
   display: inline-flex;
   align-items: baseline;
   gap: var(--s-2);
@@ -124,12 +132,13 @@ body {
   margin: 0;
   color: var(--muted);
   font-size: var(--fs-meta);
+  line-height: 1.4;
 }
 
 .server-panel {
   border: 1px solid var(--separator-strong);
   border-radius: 10px;
-  background: var(--surface-panel);
+  background: linear-gradient(180deg, #fffdf8 0%, var(--surface-panel) 100%);
   padding: var(--s-3);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
 }
@@ -172,6 +181,7 @@ body {
   padding: var(--s-4);
   border: 1px solid var(--separator-strong);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
+  background-clip: padding-box;
 }
 
 .auth-card h2 {
@@ -196,6 +206,7 @@ body {
   margin: 0 0 var(--s-3);
   color: var(--muted);
   font-size: var(--fs-meta);
+  line-height: 1.4;
 }
 
 .login-card {
@@ -225,6 +236,10 @@ body {
   gap: var(--s-2);
 }
 
+.auth-form label {
+  letter-spacing: 0.05em;
+}
+
 label {
   font-size: var(--fs-label);
   font-weight: 700;
@@ -242,6 +257,7 @@ button {
   font: inherit;
   color: inherit;
   background: var(--surface-item);
+  font-size: 1rem;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
@@ -278,14 +294,17 @@ button:focus-visible {
   margin: 10px 0 0;
   color: #4c433c;
   font-size: var(--fs-meta);
+  line-height: 1.35;
 }
 
 .status-text.error {
   color: var(--danger);
+  font-weight: 600;
 }
 
 .status-text.success {
   color: var(--success);
+  font-weight: 600;
 }
 
 @media (max-width: 860px) {

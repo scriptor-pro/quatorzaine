@@ -58,6 +58,9 @@ body {
   margin: 0;
   font-family: var(--font-body);
   color: var(--text);
+  line-height: 1.45;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   background:
     radial-gradient(1400px 500px at 20% -20%, #fdf7eb 0%, transparent 60%),
     radial-gradient(1200px 400px at 100% 0%, #e5f2ef 0%, transparent 55%),
@@ -112,10 +115,12 @@ h1 {
   margin: 0 0 var(--s-4);
   color: var(--muted);
   font-size: var(--fs-meta);
+  line-height: 1.4;
+  max-width: 62ch;
 }
 
 .planner-shell {
-  max-width: 1120px;
+  max-width: 1240px;
   margin: 0 auto;
 }
 
@@ -203,6 +208,7 @@ body.layout-compact .app-nav-link {
   border: 1px solid #8f7f63;
   background: #fff;
   font-weight: 600;
+  letter-spacing: 0.01em;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
@@ -244,7 +250,8 @@ body.layout-compact .app-nav-link {
 .planner-toolbar {
   border: 1px solid var(--separator-strong);
   border-radius: 10px;
-  background: var(--surface-panel);
+  background:
+    linear-gradient(180deg, #fffdf8 0%, var(--surface-panel) 100%);
   box-shadow: 0 8px 20px rgba(38, 29, 18, 0.06);
   padding: var(--s-2) var(--s-3);
   margin-bottom: var(--s-3);
@@ -285,6 +292,7 @@ body.layout-compact .planner-status {
   margin: 0;
   color: var(--muted);
   font-size: var(--fs-meta);
+  line-height: 1.35;
 }
 
 .planner-status[data-state="info"] {
@@ -297,6 +305,7 @@ body.layout-compact .planner-status {
 
 .planner-status[data-state="error"] {
   color: #b2452f;
+  font-weight: 600;
 }
 
 .toolbar-actions {
@@ -315,6 +324,8 @@ body.layout-compact .toolbar-actions {
   gap: var(--s-2);
   min-height: 44px;
   padding: 8px 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 body.layout-compact .toolbar-actions button {
@@ -470,12 +481,17 @@ body.layout-compact #grid {
   border: 1px solid var(--separator-strong);
   border-top: 3px solid var(--day-color);
   border-radius: 10px;
-  background: var(--surface-panel);
+  background:
+    linear-gradient(180deg, #fffdf8 0%, var(--surface-panel) 100%);
   box-shadow: 0 8px 0 rgba(38, 29, 18, 0.08);
   padding: var(--s-3);
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
+}
+
+.day-card:hover {
+  border-color: color-mix(in srgb, var(--day-color) 40%, var(--separator-strong));
 }
 
 body.layout-compact .day-card {
@@ -533,14 +549,15 @@ body.layout-compact .day-heading {
   font-size: var(--fs-h2);
   font-family: var(--font-heading);
   font-weight: 600;
-  color: #444;
+  color: #2f2a23;
+  line-height: 1.2;
   background: transparent;
   border: 0;
   padding: 0;
 }
 
 body.layout-compact .day-title {
-  font-size: 0.84rem;
+  font-size: 0.88rem;
 }
 
 .day-card[data-weekday="0"] {
@@ -574,6 +591,11 @@ body.layout-compact .day-title {
 .section {
   border-top: 1px solid var(--separator-soft);
   padding-top: var(--s-3);
+}
+
+.section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
 }
 
 body.layout-compact .section {
@@ -643,6 +665,12 @@ body.layout-compact ul {
   justify-content: space-between;
 }
 
+.task-item,
+.appointment-item,
+.quick-add-form {
+  box-shadow: 0 1px 0 rgba(38, 29, 18, 0.04);
+}
+
 body.layout-compact .task-item,
 body.layout-compact .appointment-item {
   padding: 6px;
@@ -675,7 +703,10 @@ body.layout-compact .appointment-item {
 }
 
 .task-item.done {
-  opacity: 0.7;
+  opacity: 0.92;
+}
+
+.task-item.done .task-text {
   text-decoration: line-through;
 }
 
@@ -732,6 +763,8 @@ body.layout-compact .task-actions {
 .appointment-text {
   overflow-wrap: break-word;
   word-break: normal;
+  line-height: 1.35;
+  font-size: 0.98rem;
 }
 
 .task-text-wrap {
@@ -801,11 +834,16 @@ body.layout-compact .task-actions {
 
 .quick-add-toggle {
   width: 100%;
+  font-size: 0.96rem;
 }
 
 .quick-add-form {
   display: none;
   gap: var(--s-2);
+  border: 1px solid var(--separator-soft);
+  border-radius: 10px;
+  padding: var(--s-2);
+  background: #fffdf8;
 }
 
 .quick-add-form.open {
@@ -833,6 +871,7 @@ body.layout-compact .task-actions {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-text);
   border-color: var(--btn-primary-border);
+  font-weight: 700;
 }
 
 .quick-add-rdv-fields {
@@ -890,8 +929,9 @@ body.layout-compact .quick-add-actions {
 .field-label {
   color: var(--muted);
   font-size: var(--fs-label);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  font-weight: 700;
 }
 
 .appointment-description-group {
@@ -942,7 +982,7 @@ body.layout-compact select,
 body.layout-compact button {
   min-height: 32px;
   padding: 6px 8px;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
 }
 
 body.layout-compact input[type="checkbox"] {
@@ -1008,6 +1048,7 @@ button.delete {
   color: var(--btn-danger-text);
   border-color: var(--btn-danger-border);
   min-width: 44px;
+  font-weight: 700;
 }
 
 button.delete:hover {
@@ -1026,6 +1067,7 @@ button.delete.recurring-manage {
   color: var(--btn-secondary-text);
   border-color: var(--btn-secondary-border);
   min-width: 84px;
+  font-weight: 700;
 }
 
 .task-move:hover {
