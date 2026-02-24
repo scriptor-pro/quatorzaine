@@ -58,11 +58,26 @@ function redirectToPlanner() {
 }
 
 function getConfiguredUrl() {
-  return (pbUrlEl.value || "").trim();
+  const current = (pbUrlEl.value || "").trim();
+  if (current) {
+    return current;
+  }
+
+  return localStorage.getItem(PB_URL_KEY) || "";
 }
 
 function saveConfiguredUrl(url) {
   localStorage.setItem(PB_URL_KEY, url);
+}
+
+function handleUrlInputBlur() {
+  const url = (pbUrlEl.value || "").trim();
+  if (!url) {
+    return;
+  }
+
+  saveConfiguredUrl(url);
+  setStatus(serverStatusEl, "URL mémorisée sur cet appareil.", "success");
 }
 
 async function handleServerSubmit(event) {
@@ -191,8 +206,14 @@ function bindAuthPage() {
   const savedUrl = localStorage.getItem(PB_URL_KEY);
   if (savedUrl) {
     pbUrlEl.value = savedUrl;
+    setStatus(
+      serverStatusEl,
+      "URL PocketBase déjà mémorisée. Vous pouvez vous connecter directement.",
+      "success",
+    );
   }
 
+  pbUrlEl.addEventListener("blur", handleUrlInputBlur);
   serverFormEl.addEventListener("submit", handleServerSubmit);
   loginFormEl.addEventListener("submit", handleLoginSubmit);
   signupFormEl.addEventListener("submit", handleSignupSubmit);

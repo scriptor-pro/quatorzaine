@@ -1,0 +1,7 @@
+backend = "password"
+version = 1
+kdf = "argon2id"
+m_cost = 65536
+t_cost = 3
+p_cost = 4
+salt = "222a09cf3bac4ed1361ec02e8b3a656b4666b36e5d6652bb3b18d581d3686369"

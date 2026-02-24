@@ -606,6 +606,42 @@ ul {
   gap: 6px;
 }
 
+.task-age-ribbon {
+  margin: 0 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.task-age-ribbon.age-stage-0 {
+  color: #2f7563;
+  background: #e9f8f2;
+  border-color: #b7e0d3;
+}
+
+.task-age-ribbon.age-stage-1 {
+  color: #2f6892;
+  background: #e8f3fb;
+  border-color: #bfd8ee;
+}
+
+.task-age-ribbon.age-stage-2 {
+  color: #6d5f2f;
+  background: #f8f1e2;
+  border-color: #e1cfaa;
+}
+
+.task-age-ribbon.age-stage-3 {
+  color: #6c4f35;
+  background: #f6ebe1;
+  border-color: #e3c8ad;
+}
+
 .task-badge {
   border: 1px dashed #6a6d7a;
   border-radius: 999px;

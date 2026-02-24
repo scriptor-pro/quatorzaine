@@ -127,7 +127,11 @@ function normalizeSchedule(raw) {
 
     return {
       ...day,
-      tasks: Array.isArray(previous.tasks) ? previous.tasks : [],
+      tasks: Array.isArray(previous.tasks)
+        ? previous.tasks
+            .map((task) => normalizeTask(task, day.key))
+            .filter(Boolean)
+        : [],
       appointments: Array.isArray(previous.appointments)
         ? previous.appointments
         : [],
@@ -168,7 +172,15 @@ function normalizeSchedule(raw) {
         (candidate) => candidate.id === task.id,
       );
       if (!alreadyExists) {
-        targetDay.tasks.unshift({ ...task, done: false });
+        const normalizedTask = normalizeTask(task, savedDay.key);
+        if (!normalizedTask) {
+          return;
+        }
+
+        targetDay.tasks.unshift({
+          ...normalizedTask,
+          done: false,
+        });
       }
     });
   });
@@ -737,6 +749,112 @@ function serializeSnapshot() {
 
 function makeId() {
   return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+}
+
+function createdAtFromTaskId(taskId) {
+  if (typeof taskId !== "string") {
+    return "";
+  }
+
+  const [timestampRaw] = taskId.split("-");
+  const timestamp = Number(timestampRaw);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) {
+    return "";
+  }
+
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString();
+}
+
+function normalizeTask(task, fallbackDayKey = "") {
+  if (!task || typeof task !== "object") {
+    return null;
+  }
+
+  const id = typeof task.id === "string" && task.id ? task.id : makeId();
+  const text = String(task.text || "").trim();
+  if (!text) {
+    return null;
+  }
+
+  const rawCreatedAt = String(task.createdAt || "").trim();
+  const parsedCreatedAt = rawCreatedAt ? new Date(rawCreatedAt) : null;
+  let createdAt =
+    parsedCreatedAt && !Number.isNaN(parsedCreatedAt.getTime())
+      ? parsedCreatedAt.toISOString()
+      : "";
+
+  if (!createdAt && fallbackDayKey) {
+    const fallbackDate = dayKeyToDate(fallbackDayKey);
+    if (fallbackDate) {
+      createdAt = fallbackDate.toISOString();
+    }
+  }
+
+  if (!createdAt) {
+    createdAt = createdAtFromTaskId(id);
+  }
+
+  if (!createdAt) {
+    createdAt = new Date().toISOString();
+  }
+
+  return {
+    ...task,
+    id,
+    text,
+    done: !!task.done,
+    createdAt,
+  };
+}
+
+function getTaskAgeInfo(task, dayKeyValue) {
+  const fallbackDate = dayKeyToDate(dayKeyValue);
+  const createdAtRaw = String(task?.createdAt || "").trim();
+  const createdDate = createdAtRaw ? new Date(createdAtRaw) : null;
+  const createdMs =
+    createdDate && !Number.isNaN(createdDate.getTime())
+      ? createdDate.getTime()
+      : fallbackDate
+        ? fallbackDate.getTime()
+        : Date.now();
+
+  const elapsedMs = Math.max(0, Date.now() - createdMs);
+  const elapsedDays = Math.floor(elapsedMs / 86400000);
+
+  if (elapsedDays <= 2) {
+    return {
+      stage: 0,
+      symbol: "~---",
+      label: "tout frais",
+    };
+  }
+
+  if (elapsedDays <= 6) {
+    return {
+      stage: 1,
+      symbol: "~~--",
+      label: "en rythme",
+    };
+  }
+
+  if (elapsedDays <= 13) {
+    return {
+      stage: 2,
+      symbol: "~~~-",
+      label: "bien installee",
+    };
+  }
+
+  return {
+    stage: 3,
+    symbol: "~~~~",
+    label: "longue trame",
+  };
 }
 
 function parseTimeToMinutes(value) {
@@ -1313,6 +1431,7 @@ function getAppointmentsForDay(day) {
 
 function createTaskElement(dayKeyValue, task) {
   const isRecurringTask = !!task.isRecurringOccurrence;
+  const taskAge = getTaskAgeInfo(task, dayKeyValue);
   const li = document.createElement("li");
   li.className = `task-item${task.done ? " done" : ""}`;
   if (isRecurringTask) {
@@ -1371,6 +1490,15 @@ function createTaskElement(dayKeyValue, task) {
   text.append(textWrap);
 
   main.append(check, text);
+
+  if (!isRecurringTask) {
+    const ageRibbon = document.createElement("p");
+    ageRibbon.className = `task-age-ribbon age-stage-${taskAge.stage}`;
+    ageRibbon.textContent = taskAge.symbol;
+    ageRibbon.title = `Tache ${taskAge.label}`;
+    ageRibbon.setAttribute("aria-label", `Tache ${taskAge.label}`);
+    main.append(ageRibbon);
+  }
 
   const actions = document.createElement("div");
   actions.className = "task-actions";
@@ -1640,7 +1768,12 @@ function createDayCard(day) {
     if (!text) {
       return;
     }
-    day.tasks.push({ id: makeId(), text, done: false });
+    day.tasks.push({
+      id: makeId(),
+      text,
+      done: false,
+      createdAt: new Date().toISOString(),
+    });
     trackUserAction();
     saveSchedule();
     render();
