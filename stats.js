@@ -254,6 +254,24 @@ function utcDayNumber(date) {
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
 }
 
+function setMetricValue(targetEl, valueText, labelText) {
+  if (!targetEl) {
+    return;
+  }
+
+  targetEl.textContent = "";
+
+  const valueEl = document.createElement("span");
+  valueEl.className = "streak-value-number";
+  valueEl.textContent = String(valueText);
+
+  const labelEl = document.createElement("span");
+  labelEl.className = "streak-value-label";
+  labelEl.textContent = String(labelText);
+
+  targetEl.append(valueEl, labelEl);
+}
+
 function renderStats() {
   const summaryEl = document.getElementById("stats-summary");
   const listEl = document.getElementById("stats-list");
@@ -276,13 +294,21 @@ function renderStats() {
   const totalActions = actionStats?.total || 0;
 
   if (actionsTodayValueEl && actionsTodayRangeEl && actionsTotalValueEl && actionsTotalRangeEl) {
-    actionsTodayValueEl.textContent = `${actionsToday} action(s)`;
+    setMetricValue(
+      actionsTodayValueEl,
+      actionsToday,
+      actionsToday > 1 ? "actions" : "action",
+    );
     actionsTodayRangeEl.textContent =
       actionsToday === 0
         ? "Aucune action enregistrée aujourd'hui."
         : "Compteur mis à jour à chaque modification de vos données.";
 
-    actionsTotalValueEl.textContent = `${totalActions} action(s)`;
+    setMetricValue(
+      actionsTotalValueEl,
+      totalActions,
+      totalActions > 1 ? "actions" : "action",
+    );
     if (actionStats?.startedAt) {
       const startedAt = new Date(actionStats.startedAt);
       if (!Number.isNaN(startedAt.getTime())) {
@@ -297,25 +323,29 @@ function renderStats() {
   }
 
   if (streak.length === 0) {
-    streakValueEl.textContent = "0 jour actif";
+    setMetricValue(streakValueEl, 0, "jour actif");
     streakRangeEl.textContent = "Terminez au moins une tâche pour démarrer une série.";
   } else {
-    streakValueEl.textContent =
-      streak.length === 1
-        ? "1 jour actif consécutif"
-        : `${streak.length} jours actifs consécutifs`;
+    setMetricValue(
+      streakValueEl,
+      streak.length,
+      streak.length === 1 ? "jour actif consécutif" : "jours actifs consécutifs",
+    );
     streakRangeEl.textContent = `Du ${formatDateLabel(streak.startDate)} au ${formatDateLabel(streak.endDate)}.`;
   }
 
   if (currentStreak.length === 0) {
-    currentStreakValueEl.textContent = "0 jour actif";
+    setMetricValue(currentStreakValueEl, 0, "jour actif");
     currentStreakRangeEl.textContent =
       "Terminez au moins une tâche aujourd'hui pour démarrer la série en cours.";
   } else {
-    currentStreakValueEl.textContent =
+    setMetricValue(
+      currentStreakValueEl,
+      currentStreak.length,
       currentStreak.length === 1
-        ? "1 jour actif consécutif"
-        : `${currentStreak.length} jours actifs consécutifs`;
+        ? "jour actif consécutif"
+        : "jours actifs consécutifs",
+    );
     currentStreakRangeEl.textContent = `Du ${formatDateLabel(currentStreak.startDate)} à aujourd'hui.`;
   }
 
