@@ -37,3 +37,21 @@ Dans le planner (`quatorzaine.html`):
   - `min_machines_running = 0`
   - VM `shared-cpu-1x`, `256MB`
 - Effet attendu: cout mensuel plus bas, avec possible "cold start" au premier acces apres inactivite.
+
+## Import agenda externe (Google + Outlook)
+
+Une integration lecture seule est disponible via un worker OAuth externe.
+
+- Worker Cloudflare: `calendar-worker/`
+- Guide setup: `calendar-worker/README.md`
+- Collections PocketBase necessaires:
+  - `calendar_connections`
+  - `external_events`
+
+Dans le planner (`quatorzaine.html`):
+
+- `Connecter Google`
+- `Connecter Outlook`
+- `Sync agendas`
+
+Les evenements importes apparaissent en lecture seule avec un badge source.

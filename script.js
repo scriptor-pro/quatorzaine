@@ -18,16 +18,19 @@ const DAY_NAMES = [
 
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
+const PB_EXTERNAL_EVENTS_COLLECTION = "external_events";
 const AUTO_PULL_INTERVAL_MS = 300000;
 const LAYOUT_MODE_KEY = "quatorzaine_layout_mode_v1";
 const LAYOUT_MODE_COMPACT = "compact";
 const LAYOUT_MODE_COMFORT = "comfort";
+const CALENDAR_WORKER_URL_KEY = "quatorzaine_calendar_worker_url";
 
 let schedule = [];
 let recurringRules = [];
 let detachedAppointments = [];
 let recurringTaskRules = [];
 let history = [];
+let externalEvents = [];
 let pocketbase = null;
 let cloudSaveTimer = null;
 let autoPullTimer = null;
@@ -38,8 +41,12 @@ let isPullInProgress = false;
 let cloudStatusEl;
 let cloudPullBtnEl;
 let cloudPushBtnEl;
+let connectGoogleBtnEl;
+let connectOutlookBtnEl;
+let syncCalendarsBtnEl;
 let layoutToggleBtnEl;
 let plannerLogoutBtnEl;
+let calendarStatusEl;
 let recurringTaskFormEl;
 let recurringTaskStatusEl;
 let recurringTaskListEl;
@@ -936,6 +943,44 @@ function setCloudStatus(message, isError = false) {
   cloudStatusEl.dataset.state = isError ? "error" : "info";
 }
 
+function setCalendarStatus(message, isError = false) {
+  if (!calendarStatusEl) {
+    return;
+  }
+  calendarStatusEl.textContent = message;
+  calendarStatusEl.dataset.state = isError ? "error" : "info";
+}
+
+function resolveCalendarWorkerUrl() {
+  const saved = String(localStorage.getItem(CALENDAR_WORKER_URL_KEY) || "").trim();
+  if (saved) {
+    return saved.replace(/\/$/, "");
+  }
+
+  return "";
+}
+
+function ensureCalendarWorkerUrl() {
+  const existing = resolveCalendarWorkerUrl();
+  if (existing) {
+    return existing;
+  }
+
+  const answer = window.prompt(
+    "URL du service OAuth/sync (Cloudflare Worker)",
+    "https://your-worker.your-subdomain.workers.dev",
+  );
+  const next = String(answer || "").trim().replace(/\/$/, "");
+  if (!next) {
+    setCalendarStatus("Aucune URL Worker fournie.", true);
+    return "";
+  }
+
+  localStorage.setItem(CALENDAR_WORKER_URL_KEY, next);
+  setCalendarStatus("Service calendrier configuré pour cet appareil.");
+  return next;
+}
+
 function isCloudConnected() {
   return !!(pocketbase && pocketbase.authStore && pocketbase.authStore.isValid);
 }
@@ -950,6 +995,15 @@ function updateCloudButtons() {
   }
   if (plannerLogoutBtnEl) {
     plannerLogoutBtnEl.disabled = !connected;
+  }
+  if (connectGoogleBtnEl) {
+    connectGoogleBtnEl.disabled = !connected;
+  }
+  if (connectOutlookBtnEl) {
+    connectOutlookBtnEl.disabled = !connected;
+  }
+  if (syncCalendarsBtnEl) {
+    syncCalendarsBtnEl.disabled = !connected;
   }
 }
 
@@ -992,6 +1046,114 @@ function setLayoutMode(mode) {
 function toggleLayoutMode() {
   const isCurrentlyCompact = document.body.classList.contains("layout-compact");
   setLayoutMode(isCurrentlyCompact ? LAYOUT_MODE_COMFORT : LAYOUT_MODE_COMPACT);
+}
+
+function normalizeExternalEvent(record) {
+  if (!record || typeof record !== "object") {
+    return null;
+  }
+
+  const startsAt = String(record.starts_at || "").trim();
+  const endsAt = String(record.ends_at || "").trim();
+  const startsDate = startsAt ? new Date(startsAt) : null;
+  const endsDate = endsAt ? new Date(endsAt) : null;
+  if (!startsDate || Number.isNaN(startsDate.getTime())) {
+    return null;
+  }
+
+  const startLabel = `${String(startsDate.getHours()).padStart(2, "0")}:${String(startsDate.getMinutes()).padStart(2, "0")}`;
+  const durationMinutes = endsDate && !Number.isNaN(endsDate.getTime())
+    ? Math.max(1, Math.round((endsDate.getTime() - startsDate.getTime()) / 60000))
+    : 60;
+
+  return {
+    id: String(record.external_event_id || record.id || makeId()),
+    provider: String(record.provider || "").trim().toLowerCase(),
+    date: dayKey(startsDate),
+    time: startLabel,
+    text: String(record.title || "Événement").trim() || "Événement",
+    durationMinutes,
+    isExternal: true,
+  };
+}
+
+async function loadExternalEvents() {
+  if (!isCloudConnected()) {
+    externalEvents = [];
+    return;
+  }
+
+  try {
+    const userId = pocketbase.authStore.model.id;
+    const records = await pocketbase.collection(PB_EXTERNAL_EVENTS_COLLECTION).getFullList({
+      filter: `owner = "${userId}"`,
+      sort: "starts_at",
+      fields: "id,provider,external_event_id,title,starts_at,ends_at",
+    });
+    externalEvents = records.map((record) => normalizeExternalEvent(record)).filter(Boolean);
+  } catch (_error) {
+    externalEvents = [];
+  }
+}
+
+function providerLabel(provider) {
+  return provider === "microsoft" ? "Outlook" : "Google";
+}
+
+function beginCalendarConnect(provider) {
+  if (!isCloudConnected()) {
+    setCalendarStatus("Connectez-vous d'abord à PocketBase.", true);
+    return;
+  }
+
+  const workerUrl = ensureCalendarWorkerUrl();
+  if (!workerUrl) {
+    return;
+  }
+
+  const returnTo = encodeURIComponent(window.location.href);
+  const pbToken = encodeURIComponent(pocketbase.authStore.token);
+  const providerKey = provider === "microsoft" ? "microsoft" : "google";
+  setCalendarStatus(`Ouverture de la connexion ${providerLabel(providerKey)}...`);
+  window.location.href = `${workerUrl}/oauth/${providerKey}/start?pb_token=${pbToken}&return_to=${returnTo}`;
+}
+
+async function syncExternalCalendars() {
+  if (!isCloudConnected()) {
+    setCalendarStatus("Connectez-vous d'abord à PocketBase.", true);
+    return;
+  }
+
+  const workerUrl = ensureCalendarWorkerUrl();
+  if (!workerUrl) {
+    return;
+  }
+
+  setCalendarStatus("Synchronisation des agendas externes en cours...");
+
+  try {
+    const response = await fetch(`${workerUrl}/sync/self`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${pocketbase.authStore.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ daysAhead: 30 }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    await loadExternalEvents();
+    render();
+    setCalendarStatus("Agendas Google/Outlook synchronisés.");
+  } catch (error) {
+    setCalendarStatus(
+      `Échec de synchronisation des agendas: ${error.message}`,
+      true,
+    );
+  }
 }
 
 function initPocketBase(url) {
@@ -1478,7 +1640,19 @@ function getAppointmentsForDay(day) {
       isDetached: true,
     }));
 
-  return oneShots.concat(detachedForDay, recurringForDay).sort((a, b) => {
+  const externalForDay = externalEvents
+    .filter((event) => event.date === day.key)
+    .map((event) => ({
+      id: event.id,
+      time: event.time,
+      text: event.text,
+      durationMinutes: event.durationMinutes,
+      isRecurring: false,
+      isExternal: true,
+      provider: event.provider,
+    }));
+
+  return oneShots.concat(detachedForDay, externalForDay, recurringForDay).sort((a, b) => {
     const aTime = parseTimeToMinutes(a.time || "");
     const bTime = parseTimeToMinutes(b.time || "");
     const aValue = aTime === null ? Number.POSITIVE_INFINITY : aTime;
@@ -1657,6 +1831,9 @@ function createTaskElement(dayKeyValue, task) {
 function createAppointmentElement(dayKeyValue, appointment) {
   const li = document.createElement("li");
   li.className = "appointment-item";
+  if (appointment.isExternal) {
+    li.classList.add("external");
+  }
   if (appointment.isRecurring) {
     li.classList.add("recurring");
   }
@@ -1687,6 +1864,13 @@ function createAppointmentElement(dayKeyValue, appointment) {
   duration.textContent = formatDuration(appointment.durationMinutes);
 
   topLine.append(time, duration);
+  if (appointment.isExternal) {
+    const source = document.createElement("span");
+    source.className = `appointment-source ${appointment.provider || "google"}`;
+    source.textContent = providerLabel(appointment.provider || "google");
+    source.title = "Événement importé en lecture seule";
+    topLine.append(source);
+  }
   if (appointment.isRecurring) {
     const badge = document.createElement("span");
     badge.className = "appointment-badge";
@@ -1696,6 +1880,11 @@ function createAppointmentElement(dayKeyValue, appointment) {
     topLine.append(badge);
   }
   main.append(topLine, text);
+
+  if (appointment.isExternal) {
+    li.append(main);
+    return li;
+  }
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
@@ -2017,6 +2206,8 @@ function handleLogout() {
     pocketbase.authStore.clear();
   }
 
+  externalEvents = [];
+
   if (window.confirm("Effacer aussi les données locales de cet appareil ?")) {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(RECURRING_STORAGE_KEY);
@@ -2031,8 +2222,12 @@ function handleLogout() {
 
 function bindPlannerControls() {
   cloudStatusEl = document.getElementById("cloud-status");
+  calendarStatusEl = document.getElementById("calendar-status");
   cloudPullBtnEl = document.getElementById("cloud-pull");
   cloudPushBtnEl = document.getElementById("cloud-push");
+  connectGoogleBtnEl = document.getElementById("connect-google");
+  connectOutlookBtnEl = document.getElementById("connect-outlook");
+  syncCalendarsBtnEl = document.getElementById("sync-calendars");
   layoutToggleBtnEl = document.getElementById("layout-toggle");
   plannerLogoutBtnEl = document.getElementById("planner-logout");
 
@@ -2041,6 +2236,15 @@ function bindPlannerControls() {
   }
   if (cloudPushBtnEl) {
     cloudPushBtnEl.addEventListener("click", () => pushToCloud(false));
+  }
+  if (connectGoogleBtnEl) {
+    connectGoogleBtnEl.addEventListener("click", () => beginCalendarConnect("google"));
+  }
+  if (connectOutlookBtnEl) {
+    connectOutlookBtnEl.addEventListener("click", () => beginCalendarConnect("microsoft"));
+  }
+  if (syncCalendarsBtnEl) {
+    syncCalendarsBtnEl.addEventListener("click", syncExternalCalendars);
   }
   if (plannerLogoutBtnEl) {
     plannerLogoutBtnEl.addEventListener("click", handleLogout);
@@ -2051,6 +2255,7 @@ function bindPlannerControls() {
 
   const hasSavedLayoutMode = !!localStorage.getItem(LAYOUT_MODE_KEY);
   applyLayoutMode(hasSavedLayoutMode ? getSavedLayoutMode() : getDefaultLayoutMode());
+  setCalendarStatus("Agendas externes non synchronisés.");
 
   updateCloudButtons();
 }
@@ -2107,6 +2312,9 @@ async function initApp() {
   setCloudStatus("Session cloud active. Synchronisation en cours...");
 
   await pullFromCloud(true);
+  await loadExternalEvents();
+  render();
+  setCalendarStatus("Événements externes chargés (lecture seule).", false);
   setCloudStatus("Session cloud active.");
   startAutoPull();
 }

@@ -308,6 +308,10 @@ body.layout-compact .planner-status {
   font-weight: 600;
 }
 
+#calendar-status {
+  flex-basis: 100%;
+}
+
 .toolbar-actions {
   display: flex;
   gap: var(--s-2);
@@ -745,6 +749,12 @@ body.layout-compact .appointment-item {
   border-style: dashed;
 }
 
+.appointment-item.external {
+  background: #eef4ff;
+  border-style: solid;
+  border-color: #c8d7f2;
+}
+
 .task-main,
 .appointment-main {
   display: flex;
@@ -834,6 +844,25 @@ body.layout-compact .task-actions {
   font-weight: 700;
   color: #755f28;
   background: #fff8e8;
+}
+
+.appointment-source {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: #e6efff;
+  color: #294892;
+  border: 1px solid #bfd1f5;
+}
+
+.appointment-source.microsoft {
+  background: #e7f5f2;
+  color: #1d5c56;
+  border-color: #bddfd8;
 }
 
 .task-list.drag-target {

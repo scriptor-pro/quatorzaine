@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparatif solutions OAuth</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.bunny.net/css?family=dm-sans:400,500,700|plus-jakarta-sans:600,700"
+    />
+    <style>
+      :root {
+        --bg: #f8f5ef;
+        --panel: #fffdf8;
+        --line: #d9ceb7;
+        --text: #2f2a23;
+        --muted: #5f564b;
+        --accent: #1f49b6;
+        --accent-soft: #e7eeff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "DM Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 500px at 10% -20%, #fff8e8 0%, transparent 60%),
+          radial-gradient(900px 400px at 100% 0%, #e8f2ff 0%, transparent 55%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 1220px;
+        margin: 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+        padding: 20px;
+        box-shadow: 0 10px 24px rgba(38, 29, 18, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+        font-size: clamp(1.35rem, 1.1rem + 1.1vw, 1.9rem);
+      }
+
+      .subtitle {
+        margin: 0 0 16px;
+        color: var(--muted);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1080px;
+      }
+
+      thead th {
+        background: var(--accent-soft);
+        color: #183e9a;
+        text-align: left;
+        font-weight: 700;
+        padding: 11px 10px;
+        border-bottom: 1px solid #bfd0f2;
+        white-space: nowrap;
+      }
+
+      tbody td {
+        padding: 10px;
+        border-bottom: 1px solid #ece4d6;
+        vertical-align: top;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fffcf6;
+      }
+
+      .strong-fit {
+        font-weight: 700;
+        color: #1f5d34;
+      }
+
+      .note {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Comparatif des solutions OAuth</h1>
+      <p class="subtitle">
+        Focus: intégration Google Calendar + Outlook professionnel pour une app web statique.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Solution</th>
+              <th>Coût (départ)</th>
+              <th>Complexité setup</th>
+              <th>Time-to-market</th>
+              <th>Google + Outlook pro</th>
+              <th>Contrôle / Flexibilité</th>
+              <th>Maintenance</th>
+              <th>Fit pour ton projet</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Auth0</td>
+              <td>Moyen</td>
+              <td>Faible</td>
+              <td>Très rapide</td>
+              <td>Excellent</td>
+              <td>Moyen</td>
+              <td>Faible</td>
+              <td>Très bon pour démarrer vite</td>
+            </tr>
+            <tr>
+              <td>Clerk</td>
+              <td>Moyen</td>
+              <td>Faible</td>
+              <td>Rapide</td>
+              <td>Bon (souvent via custom pour calendrier)</td>
+              <td>Moyen</td>
+              <td>Faible</td>
+              <td>Bon si priorité DX frontend</td>
+            </tr>
+            <tr>
+              <td>Supabase Auth + Edge Functions</td>
+              <td>Faible à moyen</td>
+              <td>Moyen</td>
+              <td>Moyen</td>
+              <td>Bon (avec fonctions custom)</td>
+              <td>Bon</td>
+              <td>Moyen</td>
+              <td>Très bon compromis coût/contrôle</td>
+            </tr>
+            <tr>
+              <td>Firebase Auth + Cloud Functions</td>
+              <td>Faible à moyen</td>
+              <td>Moyen</td>
+              <td>Moyen</td>
+              <td>Bon</td>
+              <td>Bon</td>
+              <td>Moyen</td>
+              <td>Bon si affinité GCP</td>
+            </tr>
+            <tr>
+              <td>AWS Cognito + Lambda</td>
+              <td>Variable</td>
+              <td>Élevée</td>
+              <td>Lent</td>
+              <td>Très bon</td>
+              <td>Élevé</td>
+              <td>Élevée</td>
+              <td>Plutôt overkill ici</td>
+            </tr>
+            <tr>
+              <td>Entra External ID (Azure)</td>
+              <td>Variable</td>
+              <td>Élevée</td>
+              <td>Lent à moyen</td>
+              <td>Excellent côté Microsoft, Google possible</td>
+              <td>Élevé</td>
+              <td>Élevée</td>
+              <td>Très bon si contexte entreprise Microsoft</td>
+            </tr>
+            <tr>
+              <td>Keycloak (self-hosted)</td>
+              <td>Faible licence</td>
+              <td>Élevée</td>
+              <td>Lent</td>
+              <td>Très bon</td>
+              <td>Très élevé</td>
+              <td>Élevée</td>
+              <td>Bon si auto-hébergement total</td>
+            </tr>
+            <tr>
+              <td>Ory / Zitadel / FusionAuth</td>
+              <td>Variable</td>
+              <td>Moyen à élevé</td>
+              <td>Moyen</td>
+              <td>Très bon</td>
+              <td>Élevé</td>
+              <td>Moyen à élevée</td>
+              <td>Bon pour une stratégie IAM long terme</td>
+            </tr>
+            <tr>
+              <td>Backend custom + PocketBase</td>
+              <td>Faible</td>
+              <td>Moyen</td>
+              <td>Moyen</td>
+              <td>Excellent</td>
+              <td>Très élevé</td>
+              <td>Moyen</td>
+              <td class="strong-fit">Meilleur fit long terme pour ton app</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note"><strong>Recommandation rapide</strong></p>
+      <ul>
+        <li>Si tu veux aller vite: Auth0 + PocketBase.</li>
+        <li>Si tu veux optimiser coût + contrôle: backend custom léger + PocketBase.</li>
+        <li>Si contexte très Microsoft entreprise: Entra External ID en priorité.</li>
+      </ul>
+    </main>
+  </body>
+</html>

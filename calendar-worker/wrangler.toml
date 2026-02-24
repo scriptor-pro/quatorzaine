@@ -1,0 +1,23 @@
+name = "quatorzaine-calendar-worker"
+main = "src/index.js"
+compatibility_date = "2026-02-24"
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+
+
+
+[vars]
+PB_EXTERNAL_EVENTS_COLLECTION = "external_events"
+PB_CONNECTIONS_COLLECTION = "calendar_connections"
+
+APP_BASE_URL = "http://localhost:8000/quatorzaine.html"
+APP_ORIGIN = "http://localhost:8000"
+
+
+[env.production.vars]
+APP_BASE_URL = "https://14.bvh.fyi/quatorzaine.html"
+APP_ORIGIN = "https://14.bvh.fyi"
+PB_EXTERNAL_EVENTS_COLLECTION = "external_events"
+PB_CONNECTIONS_COLLECTION = "calendar_connections"

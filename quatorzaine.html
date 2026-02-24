@@ -19,7 +19,7 @@
   <body>
     <a class="skip-link" href="#main-content">Aller au contenu principal</a>
     <main id="main-content" class="planner-shell">
-      <h1>Ma quatorzaine <span class="app-version">v0.9.15</span></h1>
+      <h1>Ma quatorzaine <span class="app-version">v0.9.16</span></h1>
       <p class="subtitle">Tâches et rendez-vous sur une seule page</p>
       <nav class="app-nav" aria-label="Navigation principale">
         <a class="app-nav-link active" href="quatorzaine.html" aria-current="page"
@@ -58,6 +58,18 @@
             <i class="toolbar-icon" data-lucide="cloud-upload" aria-hidden="true"></i>
             Envoyer vers le cloud
           </button>
+          <button id="connect-google" type="button" class="ghost">
+            <i class="toolbar-icon" data-lucide="calendar-check-2" aria-hidden="true"></i>
+            Connecter Google
+          </button>
+          <button id="connect-outlook" type="button" class="ghost">
+            <i class="toolbar-icon" data-lucide="briefcase" aria-hidden="true"></i>
+            Connecter Outlook
+          </button>
+          <button id="sync-calendars" type="button" class="ghost">
+            <i class="toolbar-icon" data-lucide="refresh-cw" aria-hidden="true"></i>
+            Sync agendas
+          </button>
           <button id="layout-toggle" type="button" class="ghost" aria-pressed="false">
             <i class="toolbar-icon" data-lucide="rows-3" aria-hidden="true"></i>
             Vue compacte 14/écran
@@ -66,6 +78,7 @@
             Déconnexion
           </button>
         </div>
+        <p id="calendar-status" class="planner-status" role="status" aria-live="polite"></p>
       </section>
 
       <div id="grid" aria-live="polite"></div>
