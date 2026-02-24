@@ -66,6 +66,11 @@ body {
   padding: var(--s-5);
 }
 
+body.layout-compact {
+  padding: 10px;
+  overflow: hidden;
+}
+
 .skip-link {
   position: absolute;
   left: 12px;
@@ -114,6 +119,23 @@ h1 {
   margin: 0 auto;
 }
 
+body.layout-compact .planner-shell {
+  max-width: 100%;
+  height: calc(100vh - 20px);
+  display: flex;
+  flex-direction: column;
+}
+
+body.layout-compact h1 {
+  margin: 0 0 4px;
+  font-size: clamp(1.2rem, 0.95rem + 1.2vw, 1.6rem);
+}
+
+body.layout-compact .subtitle,
+body.layout-compact .bauhaus-ribbon {
+  display: none;
+}
+
 .bauhaus-ribbon {
   display: flex;
   align-items: center;
@@ -155,6 +177,17 @@ h1 {
   flex-wrap: wrap;
   justify-content: center;
   margin: 0 0 var(--s-4);
+}
+
+body.layout-compact .app-nav {
+  margin: 0 0 8px;
+  gap: 6px;
+}
+
+body.layout-compact .app-nav-link {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.86rem;
 }
 
 .app-nav-link {
@@ -223,6 +256,20 @@ h1 {
   position: relative;
 }
 
+body.layout-compact .planner-toolbar {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+body.layout-compact .planner-toolbar::before {
+  left: 10px;
+}
+
+body.layout-compact .planner-status {
+  font-size: 0.8rem;
+}
+
 .planner-toolbar::before {
   content: "";
   position: absolute;
@@ -258,12 +305,22 @@ h1 {
   flex-wrap: wrap;
 }
 
+body.layout-compact .toolbar-actions {
+  gap: 6px;
+}
+
 .toolbar-actions button {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
   min-height: 44px;
   padding: 8px 12px;
+}
+
+body.layout-compact .toolbar-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
 }
 
 #cloud-pull,
@@ -400,6 +457,14 @@ code {
   gap: var(--s-4);
 }
 
+body.layout-compact #grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
 .day-card {
   --day-color: var(--line);
   border: 1px solid var(--separator-strong);
@@ -411,6 +476,13 @@ code {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
+}
+
+body.layout-compact .day-card {
+  min-height: 0;
+  padding: 8px;
+  gap: 6px;
+  box-shadow: 0 4px 0 rgba(38, 29, 18, 0.08);
 }
 
 .day-chip {
@@ -425,6 +497,11 @@ code {
   border: 1px solid color-mix(in srgb, var(--day-color) 45%, #ffffff);
   background: color-mix(in srgb, var(--day-color) 16%, #ffffff);
   color: color-mix(in srgb, var(--day-color) 65%, #222222);
+}
+
+body.layout-compact .day-chip {
+  font-size: 0.66rem;
+  padding: 2px 6px;
 }
 
 .day-chip.today {
@@ -446,6 +523,11 @@ code {
   padding: var(--s-2);
 }
 
+body.layout-compact .day-heading {
+  padding: 6px;
+  gap: 6px;
+}
+
 .day-title {
   margin: 0;
   font-size: var(--fs-h2);
@@ -455,6 +537,10 @@ code {
   background: transparent;
   border: 0;
   padding: 0;
+}
+
+body.layout-compact .day-title {
+  font-size: 0.84rem;
 }
 
 .day-card[data-weekday="0"] {
@@ -490,8 +576,19 @@ code {
   padding-top: var(--s-3);
 }
 
+body.layout-compact .section {
+  padding-top: 6px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .section + .section {
   margin-top: var(--s-2);
+}
+
+body.layout-compact .section + .section {
+  margin-top: 0;
 }
 
 .section-title {
@@ -524,6 +621,17 @@ ul {
   min-height: 24px;
 }
 
+body.layout-compact .section > ul {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+body.layout-compact ul {
+  gap: 6px;
+}
+
 .task-item,
 .appointment-item {
   border: 1px solid var(--separator-soft);
@@ -533,6 +641,12 @@ ul {
   gap: var(--s-2);
   align-items: flex-start;
   justify-content: space-between;
+}
+
+body.layout-compact .task-item,
+body.layout-compact .appointment-item {
+  padding: 6px;
+  gap: 6px;
 }
 
 .task-item {
@@ -610,6 +724,10 @@ ul {
   width: 100%;
 }
 
+body.layout-compact .task-actions {
+  gap: 6px;
+}
+
 .task-text,
 .appointment-text {
   overflow-wrap: break-word;
@@ -673,6 +791,11 @@ ul {
   grid-template-columns: 1fr auto;
   gap: var(--s-2);
   margin-top: var(--s-2);
+}
+
+body.layout-compact .inline-form {
+  margin-top: 6px;
+  gap: 6px;
 }
 
 .task-form {
@@ -744,6 +867,19 @@ button {
   font: inherit;
   color: inherit;
   background: var(--surface-item);
+}
+
+body.layout-compact input,
+body.layout-compact select,
+body.layout-compact button {
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+body.layout-compact input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
 }
 
 input:hover,
@@ -871,5 +1007,21 @@ button.delete.recurring-manage {
   .recurring-task-text-group,
   .recurring-task-weekdays {
     grid-column: 1;
+  }
+}
+
+@media (max-width: 1500px) {
+  body.layout-compact #grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: auto;
+  }
+
+  body.layout-compact .planner-shell {
+    height: auto;
+    display: block;
+  }
+
+  body.layout-compact {
+    overflow: auto;
   }
 }

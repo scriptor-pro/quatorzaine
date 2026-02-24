@@ -19,6 +19,9 @@ const DAY_NAMES = [
 const PB_URL_KEY = "quatorzaine_pb_url";
 const PB_COLLECTION = "planner_snapshots";
 const AUTO_PULL_INTERVAL_MS = 300000;
+const LAYOUT_MODE_KEY = "quatorzaine_layout_mode_v1";
+const LAYOUT_MODE_COMPACT = "compact";
+const LAYOUT_MODE_COMFORT = "comfort";
 
 let schedule = [];
 let recurringRules = [];
@@ -35,6 +38,7 @@ let isPullInProgress = false;
 let cloudStatusEl;
 let cloudPullBtnEl;
 let cloudPushBtnEl;
+let layoutToggleBtnEl;
 let plannerLogoutBtnEl;
 let recurringTaskFormEl;
 let recurringTaskStatusEl;
@@ -934,6 +938,47 @@ function updateCloudButtons() {
   if (plannerLogoutBtnEl) {
     plannerLogoutBtnEl.disabled = !connected;
   }
+}
+
+function normalizeLayoutMode(mode) {
+  if (mode === LAYOUT_MODE_COMPACT || mode === LAYOUT_MODE_COMFORT) {
+    return mode;
+  }
+  return LAYOUT_MODE_COMFORT;
+}
+
+function getDefaultLayoutMode() {
+  const isLargeDesktop = window.innerWidth >= 1600 && window.innerHeight >= 900;
+  return isLargeDesktop ? LAYOUT_MODE_COMPACT : LAYOUT_MODE_COMFORT;
+}
+
+function getSavedLayoutMode() {
+  return normalizeLayoutMode(localStorage.getItem(LAYOUT_MODE_KEY));
+}
+
+function applyLayoutMode(mode) {
+  const resolvedMode = normalizeLayoutMode(mode);
+  const isCompact = resolvedMode === LAYOUT_MODE_COMPACT;
+  document.body.classList.toggle("layout-compact", isCompact);
+
+  if (layoutToggleBtnEl) {
+    layoutToggleBtnEl.setAttribute("aria-pressed", String(isCompact));
+    layoutToggleBtnEl.innerHTML = isCompact
+      ? '<i class="toolbar-icon" data-lucide="rows-3" aria-hidden="true"></i> Vue compacte 14/écran'
+      : '<i class="toolbar-icon" data-lucide="rows-4" aria-hidden="true"></i> Vue confort';
+    initLucideIcons();
+  }
+}
+
+function setLayoutMode(mode) {
+  const resolvedMode = normalizeLayoutMode(mode);
+  localStorage.setItem(LAYOUT_MODE_KEY, resolvedMode);
+  applyLayoutMode(resolvedMode);
+}
+
+function toggleLayoutMode() {
+  const isCurrentlyCompact = document.body.classList.contains("layout-compact");
+  setLayoutMode(isCurrentlyCompact ? LAYOUT_MODE_COMFORT : LAYOUT_MODE_COMPACT);
 }
 
 function initPocketBase(url) {
@@ -1884,6 +1929,7 @@ function bindPlannerControls() {
   cloudStatusEl = document.getElementById("cloud-status");
   cloudPullBtnEl = document.getElementById("cloud-pull");
   cloudPushBtnEl = document.getElementById("cloud-push");
+  layoutToggleBtnEl = document.getElementById("layout-toggle");
   plannerLogoutBtnEl = document.getElementById("planner-logout");
 
   if (cloudPullBtnEl) {
@@ -1895,6 +1941,12 @@ function bindPlannerControls() {
   if (plannerLogoutBtnEl) {
     plannerLogoutBtnEl.addEventListener("click", handleLogout);
   }
+  if (layoutToggleBtnEl) {
+    layoutToggleBtnEl.addEventListener("click", toggleLayoutMode);
+  }
+
+  const hasSavedLayoutMode = !!localStorage.getItem(LAYOUT_MODE_KEY);
+  applyLayoutMode(hasSavedLayoutMode ? getSavedLayoutMode() : getDefaultLayoutMode());
 
   updateCloudButtons();
 }
