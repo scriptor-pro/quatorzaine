@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tests UX Ajouter</title>
+    <style>
+      :root {
+        --bg: #f8f5ef;
+        --panel: #fffdf8;
+        --line: #d9ceb7;
+        --text: #2f2a23;
+        --muted: #5f564b;
+        --accent: #1f49b6;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "DM Sans", "Inter", sans-serif;
+        color: var(--text);
+        background: radial-gradient(1000px 500px at 10% -20%, #fff8e8 0%, transparent 65%), var(--bg);
+        padding: 24px;
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+        padding: 20px;
+      }
+      h1 { margin: 0 0 8px; }
+      p { margin: 0 0 16px; color: var(--muted); }
+      ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+      a {
+        display: block;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--text);
+        background: #ffffff;
+      }
+      a:hover { border-color: #9fb2e5; background: #f5f8ff; }
+      strong { color: #1b3f9b; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Pages de test UX - bouton Ajouter unique</h1>
+      <p>Chaque page montre une proposition différente avec un seul bouton visible par défaut.</p>
+      <ul>
+        <li><a href="test-ux-ajout-proposition-1-menu.html"><strong>1.</strong> Bouton + menu rapide</a></li>
+        <li><a href="test-ux-ajout-proposition-2-sheet.html"><strong>2.</strong> Bouton + panneau de choix</a></li>
+        <li><a href="test-ux-ajout-proposition-3-unifie.html"><strong>3.</strong> Formulaire unifié avec type</a></li>
+        <li><a href="test-ux-ajout-proposition-4-rapide.html"><strong>4.</strong> Ajout ultra-rapide contextuel</a></li>
+        <li><a href="test-ux-ajout-proposition-5-intelligent.html"><strong>5.</strong> Tâche par défaut + switch discret</a></li>
+      </ul>
+    </main>
+  </body>
+</html>

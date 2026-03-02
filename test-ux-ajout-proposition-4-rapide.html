@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proposition 4 - Ajout ultra-rapide</title>
+    <style>
+      :root { --line: #d9ceb7; --text: #2f2a23; --muted: #5f564b; --accent: #1f49b6; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: "DM Sans", "Inter", sans-serif; background: #f8f5ef; color: var(--text); padding: 24px; }
+      .shell { max-width: 380px; margin: 0 auto; }
+      .card { border: 1px solid var(--line); border-radius: 12px; background: #fffdf8; padding: 12px; }
+      h1 { margin: 0 0 10px; font-size: 1rem; }
+      .task { border: 1px solid #d2ddef; border-radius: 8px; padding: 8px; background: #eef5ff; margin-bottom: 8px; }
+      button { min-height: 40px; border: 1px solid #1f49b6; background: #1f49b6; color: #fff; border-radius: 8px; padding: 0 12px; font-weight: 700; cursor: pointer; }
+      .panel { margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 10px; display: none; gap: 8px; }
+      .panel.open { display: grid; }
+      input { min-height: 40px; border: 1px solid #cfc4ae; border-radius: 8px; padding: 8px; font: inherit; }
+      .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .mode { background: #f5f8ff; color: #183f9b; border-color: #b7c9ef; }
+      .mode.active { background: #1f49b6; color: #fff; border-color: #1f49b6; }
+      .rdv-fields { display: none; gap: 8px; }
+      .rdv-fields.show { display: grid; grid-template-columns: 1fr 1fr; }
+      .ghost { background: #f5f2ea; color: #3d352d; border-color: #c9bca1; }
+      .hint { margin-top: 8px; color: var(--muted); font-size: 0.86rem; }
+      a { display: inline-block; margin-top: 12px; color: #1b3f9b; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="card">
+        <h1>Proposition 4 - Ajout ultra-rapide</h1>
+        <div class="task">☐ Exemple de tâche existante</div>
+
+        <button id="add-btn" type="button">Ajouter</button>
+
+        <div id="quick-panel" class="panel">
+          <input id="quick-text" type="text" placeholder="Ex: finaliser la présentation" />
+
+          <div class="modes">
+            <button id="task-mode" class="mode active" type="button">Tâche</button>
+            <button id="appointment-mode" class="mode" type="button">Rendez-vous</button>
+          </div>
+
+          <div id="rdv-fields" class="rdv-fields">
+            <input type="time" />
+            <input type="number" value="60" min="5" step="5" />
+          </div>
+
+          <button type="button">Valider</button>
+          <button id="close-quick" class="ghost" type="button">Fermer</button>
+        </div>
+
+        <p class="hint">Par défaut: saisie rapide. Les champs horaire apparaissent si besoin.</p>
+      </div>
+      <a href="test-ux-ajout-index.html">Retour à l'index</a>
+    </div>
+
+    <script>
+      const addBtn = document.getElementById("add-btn");
+      const panel = document.getElementById("quick-panel");
+      const taskMode = document.getElementById("task-mode");
+      const appointmentMode = document.getElementById("appointment-mode");
+      const rdvFields = document.getElementById("rdv-fields");
+      const quickText = document.getElementById("quick-text");
+
+      function setMode(mode) {
+        const isAppointment = mode === "appointment";
+        appointmentMode.classList.toggle("active", isAppointment);
+        taskMode.classList.toggle("active", !isAppointment);
+        rdvFields.classList.toggle("show", isAppointment);
+        quickText.placeholder = isAppointment
+          ? "Ex: rendez-vous dentiste"
+          : "Ex: finaliser la présentation";
+      }
+
+      addBtn.addEventListener("click", () => {
+        panel.classList.toggle("open");
+        setMode("task");
+      });
+
+      taskMode.addEventListener("click", () => setMode("task"));
+      appointmentMode.addEventListener("click", () => setMode("appointment"));
+      document.getElementById("close-quick").addEventListener("click", () => panel.classList.remove("open"));
+    </script>
+  </body>
+</html>

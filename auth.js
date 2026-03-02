@@ -1,4 +1,5 @@
 const PB_URL_KEY = "quatorzaine_pb_url";
+const PB_URL_BY_EMAIL_KEY = "quatorzaine_pb_url_by_email_v1";
 
 let pocketbase = null;
 
@@ -9,6 +10,73 @@ let loginStatusEl;
 let signupFormEl;
 let signupStatusEl;
 let pbUrlEl;
+let loginEmailEl;
+let signupEmailEl;
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function loadPbUrlByEmailMap() {
+  const raw = localStorage.getItem(PB_URL_BY_EMAIL_KEY);
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    return parsed;
+  } catch (_error) {
+    return {};
+  }
+}
+
+function savePbUrlByEmailMap(map) {
+  localStorage.setItem(PB_URL_BY_EMAIL_KEY, JSON.stringify(map));
+}
+
+function rememberPbUrlForEmail(email, url) {
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedUrl = String(url || "").trim();
+  if (!normalizedEmail || !normalizedUrl) {
+    return;
+  }
+
+  const map = loadPbUrlByEmailMap();
+  map[normalizedEmail] = normalizedUrl;
+  savePbUrlByEmailMap(map);
+}
+
+function getRememberedPbUrlForEmail(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return "";
+  }
+
+  const map = loadPbUrlByEmailMap();
+  const saved = map[normalizedEmail];
+  return typeof saved === "string" ? saved.trim() : "";
+}
+
+function maybeApplyRememberedPbUrlForEmail(email) {
+  const remembered = getRememberedPbUrlForEmail(email);
+  if (!remembered) {
+    return;
+  }
+
+  const current = String(pbUrlEl.value || "").trim();
+  if (!current || current === localStorage.getItem(PB_URL_KEY)) {
+    pbUrlEl.value = remembered;
+    setStatus(
+      serverStatusEl,
+      "URL PocketBase retrouvée pour cet email.",
+      "success",
+    );
+  }
+}
 
 function setStatus(target, message, type = "") {
   target.textContent = message;
@@ -118,6 +186,7 @@ async function handleLoginSubmit(event) {
     initPocketBase(url);
     await pocketbase.collection("users").authWithPassword(email, password);
     saveConfiguredUrl(url);
+    rememberPbUrlForEmail(email, url);
     setStatus(loginStatusEl, "Connexion réussie. Redirection...", "success");
     redirectToPlanner();
   } catch (error) {
@@ -183,6 +252,7 @@ async function handleSignupSubmit(event) {
     }
 
     saveConfiguredUrl(url);
+    rememberPbUrlForEmail(email, url);
     setStatus(signupStatusEl, "Compte créé. Redirection...", "success");
     redirectToPlanner();
   } catch (error) {
@@ -202,6 +272,8 @@ function bindAuthPage() {
   signupFormEl = document.getElementById("signup-form");
   signupStatusEl = document.getElementById("signup-status");
   pbUrlEl = document.getElementById("pb-url");
+  loginEmailEl = document.getElementById("login-email");
+  signupEmailEl = document.getElementById("signup-email");
 
   const savedUrl = localStorage.getItem(PB_URL_KEY);
   if (savedUrl) {
@@ -214,6 +286,12 @@ function bindAuthPage() {
   }
 
   pbUrlEl.addEventListener("blur", handleUrlInputBlur);
+  loginEmailEl.addEventListener("blur", () => {
+    maybeApplyRememberedPbUrlForEmail(loginEmailEl.value);
+  });
+  signupEmailEl.addEventListener("blur", () => {
+    maybeApplyRememberedPbUrlForEmail(signupEmailEl.value);
+  });
   serverFormEl.addEventListener("submit", handleServerSubmit);
   loginFormEl.addEventListener("submit", handleLoginSubmit);
   signupFormEl.addEventListener("submit", handleSignupSubmit);

@@ -48,6 +48,30 @@ Index unique conseille sur `external_events`:
 
 - `(owner, provider, external_event_id)`
 
+### Regles d'acces PocketBase recommandees (important)
+
+Pour limiter l'exposition des tokens OAuth:
+
+- `calendar_connections`
+  - `listRule`: `null`
+  - `viewRule`: `null`
+  - `createRule`: `null`
+  - `updateRule`: `null`
+  - `deleteRule`: `null`
+  - (ecriture/lecture reservees au worker via admin API)
+- `external_events`
+  - `listRule`: `owner = @request.auth.id`
+  - `viewRule`: `owner = @request.auth.id`
+  - `createRule`: `null`
+  - `updateRule`: `null`
+  - `deleteRule`: `null`
+
+Checklist avant mise en prod:
+
+- Verifier que `calendar_connections` est inaccessible au client PocketBase.
+- Verifier que `external_events` n'autorise que la lecture owner-side.
+- Verifier que l'auth PocketBase est active et que les clients sont bien authentifies.
+
 ## 2) Prerequis Google / Microsoft
 
 ### Google
@@ -100,6 +124,14 @@ Dans le planner:
 - bouton `Sync agendas`
 
 Le frontend demande l'URL du worker a la premiere utilisation et la stocke localement.
+
+### Demarrage OAuth recommande (plus sur)
+
+- Le frontend appelle `POST /oauth/google/start` ou `POST /oauth/microsoft/start`
+- Header: `Authorization: Bearer <pb_user_token>`
+- Body JSON: `{ "returnTo": "https://.../quatorzaine.html" }`
+- Reponse JSON: `{ "redirectUrl": "https://accounts..." }`
+- Puis redirection navigateur vers `redirectUrl`
 
 ## Intervention utilisateur necessaire
 

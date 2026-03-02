@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proposition 3 - Formulaire unifié</title>
+    <style>
+      :root { --line: #d9ceb7; --text: #2f2a23; --muted: #5f564b; --accent: #1f49b6; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: "DM Sans", "Inter", sans-serif; background: #f8f5ef; color: var(--text); padding: 24px; }
+      .shell { max-width: 380px; margin: 0 auto; }
+      .card { border: 1px solid var(--line); border-radius: 12px; background: #fffdf8; padding: 12px; }
+      h1 { margin: 0 0 10px; font-size: 1rem; }
+      .task { border: 1px solid #d2ddef; border-radius: 8px; padding: 8px; background: #eef5ff; margin-bottom: 8px; }
+      button { min-height: 40px; border: 1px solid #1f49b6; background: #1f49b6; color: #fff; border-radius: 8px; padding: 0 12px; font-weight: 700; cursor: pointer; }
+      .panel { margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 10px; display: none; gap: 8px; }
+      .panel.open { display: grid; }
+      select, input { min-height: 40px; border: 1px solid #cfc4ae; border-radius: 8px; padding: 8px; font: inherit; }
+      .rdv-only { display: none; }
+      .rdv-only.show { display: block; }
+      .ghost { background: #f5f2ea; color: #3d352d; border-color: #c9bca1; }
+      .hint { margin-top: 8px; color: var(--muted); font-size: 0.86rem; }
+      a { display: inline-block; margin-top: 12px; color: #1b3f9b; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="card">
+        <h1>Proposition 3 - Formulaire unifié</h1>
+        <div class="task">☐ Exemple de tâche existante</div>
+
+        <button id="add-btn" type="button">Ajouter</button>
+
+        <form id="unified-form" class="panel">
+          <label for="entry-type">Type</label>
+          <select id="entry-type">
+            <option value="task">Tâche</option>
+            <option value="appointment">Rendez-vous</option>
+          </select>
+
+          <input id="entry-text" type="text" placeholder="Texte" />
+          <input class="rdv-only" id="entry-time" type="time" />
+          <input class="rdv-only" id="entry-duration" type="number" min="5" step="5" value="60" />
+
+          <button type="button">Valider</button>
+          <button id="close-form" class="ghost" type="button">Fermer</button>
+        </form>
+
+        <p class="hint">Un seul formulaire qui change selon le type choisi.</p>
+      </div>
+      <a href="test-ux-ajout-index.html">Retour à l'index</a>
+    </div>
+
+    <script>
+      const addBtn = document.getElementById("add-btn");
+      const form = document.getElementById("unified-form");
+      const entryType = document.getElementById("entry-type");
+      const rdvFields = document.querySelectorAll(".rdv-only");
+
+      function updateTypeFields() {
+        const isAppointment = entryType.value === "appointment";
+        rdvFields.forEach((field) => {
+          field.classList.toggle("show", isAppointment);
+        });
+      }
+
+      addBtn.addEventListener("click", () => {
+        form.classList.toggle("open");
+        updateTypeFields();
+      });
+
+      entryType.addEventListener("change", updateTypeFields);
+
+      document.getElementById("close-form").addEventListener("click", () => {
+        form.classList.remove("open");
+      });
+    </script>
+  </body>
+</html>

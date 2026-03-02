@@ -23,7 +23,7 @@ const AUTO_PULL_INTERVAL_MS = 300000;
 const LAYOUT_MODE_KEY = "quatorzaine_layout_mode_v1";
 const LAYOUT_MODE_COMPACT = "compact";
 const LAYOUT_MODE_COMFORT = "comfort";
-const CALENDAR_WORKER_URL_KEY = "quatorzaine_calendar_worker_url";
+const CALENDAR_WORKER_URL_KEY_PREFIX = "quatorzaine_calendar_worker_url_v2";
 
 let schedule = [];
 let recurringRules = [];
@@ -951,8 +951,16 @@ function setCalendarStatus(message, isError = false) {
   calendarStatusEl.dataset.state = isError ? "error" : "info";
 }
 
+function getCalendarWorkerUrlStorageKey() {
+  const pbUrl = String(localStorage.getItem(PB_URL_KEY) || "").trim().toLowerCase();
+  if (!pbUrl) {
+    return `${CALENDAR_WORKER_URL_KEY_PREFIX}::default`;
+  }
+  return `${CALENDAR_WORKER_URL_KEY_PREFIX}::${pbUrl}`;
+}
+
 function resolveCalendarWorkerUrl() {
-  const saved = String(localStorage.getItem(CALENDAR_WORKER_URL_KEY) || "").trim();
+  const saved = String(localStorage.getItem(getCalendarWorkerUrlStorageKey()) || "").trim();
   if (saved) {
     return saved.replace(/\/$/, "");
   }
@@ -968,7 +976,7 @@ function ensureCalendarWorkerUrl() {
 
   const answer = window.prompt(
     "URL du service OAuth/sync (Cloudflare Worker)",
-    "https://your-worker.your-subdomain.workers.dev",
+    "https://quatorzaine-calendar-worker-production.bvh8199.workers.dev",
   );
   const next = String(answer || "").trim().replace(/\/$/, "");
   if (!next) {
@@ -976,9 +984,32 @@ function ensureCalendarWorkerUrl() {
     return "";
   }
 
-  localStorage.setItem(CALENDAR_WORKER_URL_KEY, next);
+  localStorage.setItem(getCalendarWorkerUrlStorageKey(), next);
   setCalendarStatus("Service calendrier configuré pour cet appareil.");
   return next;
+}
+
+async function requestOAuthStartRedirect(workerUrl, provider, returnTo) {
+  const response = await fetch(`${workerUrl}/oauth/${provider}/start`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${pocketbase.authStore.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ returnTo }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  const redirectUrl = String(payload?.redirectUrl || "").trim();
+  if (!redirectUrl) {
+    throw new Error("URL OAuth manquante");
+  }
+
+  return redirectUrl;
 }
 
 function isCloudConnected() {
@@ -1100,9 +1131,19 @@ function providerLabel(provider) {
   return provider === "microsoft" ? "Outlook" : "Google";
 }
 
-function beginCalendarConnect(provider) {
+async function beginCalendarConnect(provider) {
   if (!isCloudConnected()) {
     setCalendarStatus("Connectez-vous d'abord à PocketBase.", true);
+    return;
+  }
+
+  try {
+    await pocketbase.collection("users").authRefresh();
+  } catch (_error) {
+    setCalendarStatus(
+      "Session PocketBase expirée. Reconnectez-vous puis réessayez.",
+      true,
+    );
     return;
   }
 
@@ -1111,11 +1152,23 @@ function beginCalendarConnect(provider) {
     return;
   }
 
-  const returnTo = encodeURIComponent(window.location.href);
-  const pbToken = encodeURIComponent(pocketbase.authStore.token);
   const providerKey = provider === "microsoft" ? "microsoft" : "google";
+  const returnTo = window.location.href;
+
   setCalendarStatus(`Ouverture de la connexion ${providerLabel(providerKey)}...`);
-  window.location.href = `${workerUrl}/oauth/${providerKey}/start?pb_token=${pbToken}&return_to=${returnTo}`;
+  try {
+    const redirectUrl = await requestOAuthStartRedirect(
+      workerUrl,
+      providerKey,
+      returnTo,
+    );
+    window.location.href = redirectUrl;
+  } catch (error) {
+    setCalendarStatus(
+      `Échec de préparation OAuth ${providerLabel(providerKey)}: ${error.message}`,
+      true,
+    );
+  }
 }
 
 async function syncExternalCalendars() {

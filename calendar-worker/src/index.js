@@ -4,7 +4,11 @@ const MICROSOFT_SCOPE = "openid profile offline_access Calendars.Read";
 let cachedAdminToken = "";
 
 function withCors(response, origin) {
-  response.headers.set("Access-Control-Allow-Origin", origin || "*");
+  try {
+    response.headers.set("Access-Control-Allow-Origin", String(origin || "*"));
+  } catch (_error) {
+    response.headers.set("Access-Control-Allow-Origin", "*");
+  }
   response.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
   response.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   return response;
@@ -21,12 +25,19 @@ function json(data, status = 200, origin = "*") {
 }
 
 function base64UrlEncode(value) {
-  return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  const bytes = new TextEncoder().encode(String(value));
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function base64UrlDecode(value) {
   const padded = value.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((value.length + 3) % 4);
-  return atob(padded);
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
 }
 
 async function hmacSign(secret, message) {
@@ -66,6 +77,49 @@ async function verifyState(rawState, env) {
 
 function pbBase(env) {
   return String(env.PB_URL || "").replace(/\/$/, "");
+}
+
+function safeFallbackReturnTo(env) {
+  const configured = String(env.APP_BASE_URL || "").trim();
+  if (configured) {
+    return configured;
+  }
+
+  const origin = String(env.APP_ORIGIN || "").trim();
+  if (origin) {
+    return `${origin.replace(/\/$/, "")}/quatorzaine.html`;
+  }
+
+  return "http://localhost:8000/quatorzaine.html";
+}
+
+function normalizeReturnTo(rawValue, env) {
+  const fallback = safeFallbackReturnTo(env);
+  let candidate;
+
+  try {
+    candidate = new URL(String(rawValue || fallback || ""));
+  } catch (_error) {
+    return fallback;
+  }
+
+  if (!["http:", "https:"].includes(candidate.protocol)) {
+    return fallback;
+  }
+
+  const allowedOriginRaw = String(env.APP_ORIGIN || "").trim();
+  if (allowedOriginRaw) {
+    try {
+      const allowedOrigin = new URL(allowedOriginRaw).origin;
+      if (candidate.origin !== allowedOrigin) {
+        return fallback;
+      }
+    } catch (_error) {
+      return fallback;
+    }
+  }
+
+  return candidate.toString();
 }
 
 async function pbRequest(env, path, init = {}) {
@@ -450,18 +504,34 @@ async function syncConnection(env, connection, daysAhead) {
   return events.length;
 }
 
-async function handleOAuthStart(request, env, provider) {
-  const url = new URL(request.url);
-  const pbToken = String(url.searchParams.get("pb_token") || "");
-  const returnTo = String(url.searchParams.get("return_to") || env.APP_BASE_URL || "");
+async function handleOAuthStart(request, env, provider, origin) {
+  const authHeader = request.headers.get("Authorization") || "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const body = await request.json().catch(() => ({}));
+  const pbToken = bearerToken;
+  const returnToRaw = String(body?.returnTo || "");
+  const returnTo = normalizeReturnTo(returnToRaw, env);
+
   if (!pbToken) {
-    return new Response("pb_token manquant", { status: 400 });
+    return json({ error: "Token PocketBase manquant" }, 400, origin);
+  }
+
+  if (!env.WORKER_STATE_SECRET) {
+    return json({ error: "WORKER_STATE_SECRET manquant" }, 500, origin);
+  }
+
+  if (provider === "google" && (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET)) {
+    return json({ error: "Secrets Google manquants" }, 500, origin);
+  }
+
+  if (provider === "microsoft" && (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET)) {
+    return json({ error: "Secrets Microsoft manquants" }, 500, origin);
   }
 
   const userInfo = await getUserFromPbToken(env, pbToken);
   const ownerId = String(userInfo?.record?.id || "");
   if (!ownerId) {
-    return new Response("Utilisateur PocketBase invalide", { status: 401 });
+    return json({ error: "Utilisateur PocketBase invalide" }, 401, origin);
   }
 
   const callbackPath = provider === "google" ? "/oauth/google/callback" : "/oauth/microsoft/callback";
@@ -470,7 +540,6 @@ async function handleOAuthStart(request, env, provider) {
   const state = await buildState({
     ownerId,
     provider,
-    pbToken,
     returnTo,
     expiresAt: Date.now() + 5 * 60 * 1000,
   }, env);
@@ -484,7 +553,7 @@ async function handleOAuthStart(request, env, provider) {
     authUrl.searchParams.set("access_type", "offline");
     authUrl.searchParams.set("prompt", "consent");
     authUrl.searchParams.set("state", state);
-    return Response.redirect(authUrl.toString(), 302);
+    return json({ redirectUrl: authUrl.toString() }, 200, origin);
   }
 
   const authUrl = new URL("https://login.microsoftonline.com/common/oauth2/v2.0/authorize");
@@ -494,7 +563,7 @@ async function handleOAuthStart(request, env, provider) {
   authUrl.searchParams.set("scope", MICROSOFT_SCOPE);
   authUrl.searchParams.set("response_mode", "query");
   authUrl.searchParams.set("state", state);
-  return Response.redirect(authUrl.toString(), 302);
+  return json({ redirectUrl: authUrl.toString() }, 200, origin);
 }
 
 async function handleOAuthCallback(request, env, provider) {
@@ -540,7 +609,7 @@ async function handleOAuthCallback(request, env, provider) {
     last_sync_at: "",
   });
 
-  const redirect = new URL(String(state.returnTo || env.APP_BASE_URL || ""));
+  const redirect = new URL(normalizeReturnTo(state.returnTo, env));
   redirect.searchParams.set("calendar_connected", provider);
   return Response.redirect(redirect.toString(), 302);
 }
@@ -607,34 +676,53 @@ async function scheduledSync(env) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const origin = env.APP_ORIGIN || "*";
-
-    if (request.method === "OPTIONS") {
-      return withCors(new Response(null, { status: 204 }), origin);
-    }
-
     try {
-      if (request.method === "GET" && path === "/oauth/google/start") {
-        return handleOAuthStart(request, env, "google");
+      const url = new URL(request.url);
+      const path = url.pathname;
+      const origin = env.APP_ORIGIN || "*";
+
+      if (request.method === "OPTIONS") {
+        return withCors(new Response(null, { status: 204 }), origin);
       }
-      if (request.method === "GET" && path === "/oauth/microsoft/start") {
-        return handleOAuthStart(request, env, "microsoft");
+
+      if (request.method === "GET" && path === "/health") {
+        return json({ ok: true, service: "calendar-worker" }, 200, origin);
+      }
+
+      if (request.method === "POST" && path === "/oauth/google/start") {
+        return await handleOAuthStart(request, env, "google", origin);
+      }
+      if (request.method === "POST" && path === "/oauth/microsoft/start") {
+        return await handleOAuthStart(request, env, "microsoft", origin);
       }
       if (request.method === "GET" && path === "/oauth/google/callback") {
-        return handleOAuthCallback(request, env, "google");
+        return await handleOAuthCallback(request, env, "google");
       }
       if (request.method === "GET" && path === "/oauth/microsoft/callback") {
-        return handleOAuthCallback(request, env, "microsoft");
+        return await handleOAuthCallback(request, env, "microsoft");
       }
       if (request.method === "POST" && path === "/sync/self") {
-        return handleSyncSelf(request, env, origin);
+        return await handleSyncSelf(request, env, origin);
       }
 
       return json({ error: "Route introuvable" }, 404, origin);
     } catch (error) {
-      return json({ error: String(error.message || "Unexpected error") }, 500, origin);
+      console.error("Worker fetch error", {
+        message: String(error?.message || error),
+        stack: String(error?.stack || ""),
+        method: request.method,
+        url: request.url,
+      });
+      return new Response(
+        JSON.stringify({ error: String(error?.message || "Unexpected error") }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
     }
   },
 
