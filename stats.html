@@ -20,8 +20,8 @@
   <body>
     <a class="skip-link" href="#main-content">Aller au contenu principal</a>
     <main id="main-content" class="stats-shell">
-      <h1>Statistiques <span class="app-version">v0.9.16</span></h1>
-      <p class="subtitle">Top 10 des journées avec le plus de tâches terminées</p>
+      <h1>Statistiques <span class="app-version">v0.9.17</span></h1>
+      <p class="subtitle">Vue d'ensemble de votre activité et productivité</p>
       <nav class="app-nav" aria-label="Navigation principale">
         <a class="app-nav-link" href="quatorzaine.html"
           ><i class="nav-icon" data-lucide="layout-grid" aria-hidden="true"></i>
@@ -41,10 +41,10 @@
         <span class="shape shape-bar"></span>
       </div>
 
-      <section class="stats-panel" aria-label="Classement des jours">
-        <h2>Classement</h2>
+      <section class="stats-panel" aria-label="Statistiques détaillées">
+        <!-- Streaks -->
+        <h2>Séries de jours actifs</h2>
         <article class="streak-card" aria-label="Plus longue série de jours actifs">
-          <h3>Séries de jours actifs</h3>
           <div class="streak-grid">
             <section class="streak-metric" aria-label="Plus longue série">
               <h4>Plus longue série</h4>
@@ -58,8 +58,10 @@
             </section>
           </div>
         </article>
+
+        <!-- Actions -->
+        <h2>Actions suivies</h2>
         <article class="streak-card" aria-label="Compteur d'actions">
-          <h3>Actions suivies</h3>
           <div class="streak-grid">
             <section class="streak-metric" aria-label="Actions aujourd'hui">
               <h4>Aujourd'hui</h4>
@@ -73,13 +75,51 @@
             </section>
           </div>
         </article>
+
+        <!-- Productivity insights -->
+        <h2>Productivité</h2>
+        <article class="streak-card" aria-label="Indicateurs de productivité">
+          <div class="streak-grid streak-grid-4">
+            <section class="streak-metric" aria-label="Moyenne par jour actif">
+              <h4>Moyenne / jour actif</h4>
+              <p id="avg-done-value" class="streak-value"></p>
+              <p id="avg-done-range" class="streak-range"></p>
+            </section>
+            <section class="streak-metric" aria-label="Taux de complétion">
+              <h4>Taux de complétion</h4>
+              <p id="completion-value" class="streak-value"></p>
+              <p id="completion-range" class="streak-range"></p>
+            </section>
+            <section class="streak-metric" aria-label="Meilleur jour de la semaine">
+              <h4>Meilleur jour</h4>
+              <p id="weekday-value" class="streak-value"></p>
+              <p id="weekday-range" class="streak-range"></p>
+            </section>
+            <section class="streak-metric" aria-label="Rendez-vous">
+              <h4>Rendez-vous</h4>
+              <p id="appointments-value" class="streak-value"></p>
+              <p id="appointments-range" class="streak-range"></p>
+            </section>
+          </div>
+        </article>
+
+        <!-- Weekly trends -->
+        <h2>Tendance hebdomadaire</h2>
+        <article class="streak-card" aria-label="Tendance des 12 dernières semaines">
+          <p class="streak-range" style="margin: 0 0 var(--s-2)">Tâches terminées par semaine (12 dernières semaines)</p>
+          <div id="weekly-chart" class="weekly-chart" aria-label="Graphique des tendances hebdomadaires" role="img"></div>
+        </article>
+
+        <!-- Leaderboard -->
+        <h2>Classement</h2>
         <p id="stats-summary" class="planner-status" role="status" aria-live="polite"></p>
         <ol id="stats-list" class="stats-list"></ol>
       </section>
     </main>
 
     <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script defer src="lucide-init.js"></script>
-    <script defer src="stats.js"></script>
+    <script defer src="lucide-init.js?v=0.9.17"></script>
+    <script defer src="shared.js?v=0.9.17"></script>
+    <script defer src="stats.js?v=0.9.17"></script>
   </body>
 </html>
