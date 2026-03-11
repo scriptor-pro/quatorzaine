@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quatorzaine - Statistiques</title>
+    <script src="font-variants.js"></script>
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.bunny.net/css?family=dm-sans:400,500,700|inter:500,700|outfit:400,500,700|plus-jakarta-sans:500,700|rubik:500,700|sora:500,700|work-sans:400,500,700"
+    />
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="statistiques.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Aller au contenu principal</a>
+    <main id="main-content" class="planner-shell">
+      <h1>Statistiques <span class="app-version">v0.9.17</span></h1>
+      <p class="subtitle">Vue d'ensemble de votre activité et productivité</p>
+      <nav class="app-nav" aria-label="Navigation principale">
+        <a class="app-nav-link" href="quatorzaine.html"
+          ><i class="nav-icon" data-lucide="layout-grid" aria-hidden="true"></i>
+          Planner</a
+        >
+        <a class="app-nav-link" href="ajouter.html"
+          ><i class="nav-icon" data-lucide="plus" aria-hidden="true"></i> Ajouter</a
+        >
+        <a class="app-nav-link active" href="statistiques.html" aria-current="page"
+          ><i class="nav-icon" data-lucide="bar-chart-3" aria-hidden="true"></i> Statistiques</a
+        >
+      </nav>
+
+      <div class="bauhaus-ribbon" aria-hidden="true">
+        <span class="shape shape-circle"></span>
+        <span class="shape shape-rect"></span>
+        <span class="shape shape-bar"></span>
+      </div>
+
+      <section class="stats-container" aria-label="Statistiques">
+        <!-- Hero: Streak Card -->
+        <article class="stat-card stat-card-hero">
+          <h2 class="stat-card-title">
+            <i class="stat-icon" data-lucide="flame" aria-hidden="true"></i>
+            Série en cours
+          </h2>
+          <div class="streak-display">
+            <div class="streak-current">
+              <span class="streak-number" id="current-streak">0</span>
+              <span class="streak-label">jours</span>
+            </div>
+            <div class="streak-progress">
+              <div class="streak-bar">
+                <div class="streak-bar-fill" id="streak-bar-fill" style="width: 0%;"></div>
+              </div>
+              <div class="streak-record">
+                <span class="streak-record-label">Record :</span>
+                <span class="streak-record-value" id="record-streak">0</span>
+                <span class="streak-record-label">jours</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+          <article class="stat-card">
+            <h3 class="stat-card-subtitle">Tâches terminées</h3>
+            <div class="metric-value" id="tasks-completed">0</div>
+            <div class="metric-context" id="tasks-completed-context">-</div>
+          </article>
+
+          <article class="stat-card">
+            <h3 class="stat-card-subtitle">Taux de complétion</h3>
+            <div class="metric-value" id="completion-rate">0%</div>
+            <div class="completion-bar">
+              <div class="completion-bar-fill" id="completion-bar-fill" style="width: 0%;"></div>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <h3 class="stat-card-subtitle">Rendez-vous</h3>
+            <div class="metric-value" id="appointments-count">0</div>
+            <div class="metric-context" id="appointments-context">-</div>
+          </article>
+
+          <article class="stat-card">
+            <h3 class="stat-card-subtitle">Moyenne par jour</h3>
+            <div class="metric-value" id="average-per-day">0.0</div>
+            <div class="metric-context">tâches terminées</div>
+          </article>
+        </div>
+
+        <!-- Weekly Trend Chart -->
+        <article class="stat-card stat-card-wide">
+          <h2 class="stat-card-title">
+            <i class="stat-icon" data-lucide="trending-up" aria-hidden="true"></i>
+            Tendance des 2 dernières semaines
+          </h2>
+          <div class="weekly-chart" id="weekly-chart" aria-label="Graphique des tâches terminées par jour">
+            <!-- Dynamically generated bars -->
+          </div>
+        </article>
+
+        <!-- Best Performing Days -->
+        <article class="stat-card stat-card-wide">
+          <h2 class="stat-card-title">
+            <i class="stat-icon" data-lucide="award" aria-hidden="true"></i>
+            Vos meilleurs jours
+          </h2>
+          <div class="best-days-list" id="best-days-list">
+            <!-- Dynamically generated list -->
+          </div>
+        </article>
+      </section>
+
+      <section class="planner-toolbar" aria-label="Actions">
+        <div class="toolbar-actions">
+          <button id="stats-logout" type="button" class="ghost">
+            Déconnexion
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/pocketbase@0.26.8/dist/pocketbase.umd.js"
+      integrity="sha384-ZI73uCTk/NcBsnKPHMGJVgeSDF0ZSNPYG0cGceGuVJ8h2nLLpeDwYOGrceksNOvM"
+      crossorigin="anonymous"
+    ></script>
+    <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script defer src="lucide-init.js?v=0.9.17"></script>
+    <script defer src="shared.js?v=0.9.17"></script>
+    <script defer src="statistiques.js?v=0.9.17"></script>
+  </body>
+</html>
