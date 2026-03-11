@@ -1661,7 +1661,7 @@ function getAppointmentsForDay(day) {
     const aTime = parseTimeToMinutes(a.time || "");
     const bTime = parseTimeToMinutes(b.time || "");
     const aValue = aTime === null ? Number.POSITIVE_INFINITY : aTime;
-    const bValue = bTime === null ? Number.POSITIVE_INFINITY : bValue;
+    const bValue = bTime === null ? Number.POSITIVE_INFINITY : bTime;
     return aValue - bValue;
   });
 }
