@@ -3,7 +3,7 @@ const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
 const RECURRING_TASK_STORAGE_KEY = "quatorzaine_recurring_tasks_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
-const ACTION_STATS_STORAGE_KEY = "quatorzaine_action_stats_v1";
+// ACTION_STATS_STORAGE_KEY is defined in shared.js
 const HISTORY_MAX_DAYS = 3650;
 const DAY_COUNT = 14;
 const DAY_NAMES = [
@@ -413,6 +413,7 @@ function normalizeDetachedAppointments(raw) {
         time,
         text,
         durationMinutes,
+        done: !!appointment.done,
       };
     })
     .filter(Boolean);
@@ -509,61 +510,8 @@ function mergeScheduleIntoHistory(previousHistory, currentSchedule) {
   return merged.slice(merged.length - HISTORY_MAX_DAYS);
 }
 
-function normalizeActionStats(rawValue) {
-  if (!rawValue || typeof rawValue !== "object") {
-    return null;
-  }
-
-  const total = Number(rawValue.total);
-  const startedAt = String(rawValue.startedAt || "").trim();
-  const byDayRaw = rawValue.byDay && typeof rawValue.byDay === "object" ? rawValue.byDay : {};
-
-  const byDay = Object.entries(byDayRaw).reduce((acc, [key, value]) => {
-    if (!dayKeyToDate(key)) {
-      return acc;
-    }
-
-    const parsedValue = Math.max(0, Math.floor(Number(value) || 0));
-    if (parsedValue > 0) {
-      acc[key] = parsedValue;
-    }
-    return acc;
-  }, {});
-
-  return {
-    total: Number.isFinite(total) && total > 0 ? Math.floor(total) : 0,
-    startedAt,
-    byDay,
-  };
-}
-
-function loadActionStats() {
-  const savedRaw = localStorage.getItem(ACTION_STATS_STORAGE_KEY);
-  if (!savedRaw) {
-    return null;
-  }
-
-  try {
-    return normalizeActionStats(JSON.parse(savedRaw));
-  } catch (_error) {
-    return null;
-  }
-}
-
-function saveActionStats(actionStats) {
-  localStorage.setItem(ACTION_STATS_STORAGE_KEY, JSON.stringify(actionStats));
-}
-
-function mergeActionStats(primaryStats, secondaryStats) {
-  const primary = normalizeActionStats(primaryStats);
-  const secondary = normalizeActionStats(secondaryStats);
-
-  if (primary && secondary) {
-    return primary.total >= secondary.total ? primary : secondary;
-  }
-
-  return primary || secondary || null;
-}
+// normalizeActionStats, loadActionStats, saveActionStats, mergeActionStats
+// are defined in shared.js
 
 function trackUserAction() {
   const now = new Date();
@@ -1670,6 +1618,7 @@ function getAppointmentsForDay(day) {
   const oneShots = (day.appointments || []).map((appointment) => ({
     ...appointment,
     isRecurring: false,
+    done: !!appointment.done,
   }));
 
   const recurringForDay = recurringRules
@@ -1680,6 +1629,7 @@ function getAppointmentsForDay(day) {
       time: rule.time,
       durationMinutes: rule.durationMinutes,
       isRecurring: true,
+      done: false,
     }));
 
   const detachedForDay = detachedAppointments
@@ -1691,6 +1641,7 @@ function getAppointmentsForDay(day) {
       durationMinutes: appointment.durationMinutes,
       isRecurring: false,
       isDetached: true,
+      done: !!appointment.done,
     }));
 
   const externalForDay = externalEvents
@@ -1703,13 +1654,14 @@ function getAppointmentsForDay(day) {
       isRecurring: false,
       isExternal: true,
       provider: event.provider,
+      done: false,
     }));
 
   return oneShots.concat(detachedForDay, externalForDay, recurringForDay).sort((a, b) => {
     const aTime = parseTimeToMinutes(a.time || "");
     const bTime = parseTimeToMinutes(b.time || "");
     const aValue = aTime === null ? Number.POSITIVE_INFINITY : aTime;
-    const bValue = bTime === null ? Number.POSITIVE_INFINITY : bTime;
+    const bValue = bTime === null ? Number.POSITIVE_INFINITY : bValue;
     return aValue - bValue;
   });
 }
@@ -1890,12 +1842,49 @@ function createAppointmentElement(dayKeyValue, appointment) {
   if (appointment.isRecurring) {
     li.classList.add("recurring");
   }
+  if (appointment.done) {
+    li.classList.add("done");
+  }
 
   const main = document.createElement("div");
   main.className = "appointment-main";
 
   const topLine = document.createElement("div");
   topLine.className = "appointment-topline";
+
+  if (!appointment.isExternal && !appointment.isRecurring) {
+    const check = document.createElement("input");
+    const checkboxId = `appointment-${appointment.id}`;
+    check.type = "checkbox";
+    check.id = checkboxId;
+    check.checked = !!appointment.done;
+    check.className = "appointment-checkbox";
+    check.addEventListener("change", () => {
+      if (appointment.isDetached) {
+        const target = detachedAppointments.find((a) => a.id === appointment.id);
+        if (target) {
+          target.done = check.checked;
+          trackUserAction();
+          saveDetachedAppointments();
+          render();
+        }
+        return;
+      }
+
+      const day = schedule.find((d) => d.key === dayKeyValue);
+      const target = day.appointments.find((a) => a.id === appointment.id);
+      if (target) {
+        target.done = check.checked;
+        trackUserAction();
+        saveSchedule();
+        render();
+        if (target.done) {
+          launchConfetti();
+        }
+      }
+    });
+    topLine.append(check);
+  }
 
   const time = document.createElement("span");
   time.className = "appointment-time";
@@ -1952,11 +1941,24 @@ function createAppointmentElement(dayKeyValue, appointment) {
     deleteBtn.classList.add("recurring-manage");
   } else {
     deleteBtn.textContent = "x";
-    deleteBtn.setAttribute("aria-label", "Supprimer le rendez-vous");
+    deleteBtn.disabled = !appointment.done;
+    deleteBtn.setAttribute(
+      "aria-label",
+      appointment.done
+        ? "Supprimer le rendez-vous"
+        : "Terminez le rendez-vous pour activer la suppression",
+    );
+    deleteBtn.title = appointment.done
+      ? "Supprimer le rendez-vous"
+      : "Terminez le rendez-vous pour pouvoir le supprimer";
   }
   deleteBtn.addEventListener("click", () => {
     if (appointment.isRecurring) {
       window.location.href = "ajouter.html";
+      return;
+    }
+
+    if (!appointment.done) {
       return;
     }
 
@@ -2221,6 +2223,7 @@ function createDayCard(day) {
       time,
       text,
       durationMinutes: Math.round(durationMinutes),
+      done: false,
     });
     trackUserAction();
     saveSchedule();
