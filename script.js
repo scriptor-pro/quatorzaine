@@ -2,6 +2,7 @@ const STORAGE_KEY = "quatorzaine_schedule_v1";
 const RECURRING_STORAGE_KEY = "quatorzaine_recurring_v1";
 const DETACHED_APPOINTMENTS_STORAGE_KEY = "quatorzaine_detached_appointments_v1";
 const RECURRING_TASK_STORAGE_KEY = "quatorzaine_recurring_tasks_v1";
+const RECURRING_APPOINTMENT_DONE_STORAGE_KEY = "quatorzaine_recurring_appointment_done_v1";
 const HISTORY_STORAGE_KEY = "quatorzaine_history_v1";
 // ACTION_STATS_STORAGE_KEY is defined in shared.js
 const HISTORY_MAX_DAYS = 3650;
@@ -29,6 +30,7 @@ let schedule = [];
 let recurringRules = [];
 let detachedAppointments = [];
 let recurringTaskRules = [];
+let recurringAppointmentDone = {};
 let history = [];
 let externalEvents = [];
 let pocketbase = null;
@@ -559,6 +561,7 @@ function parseCloudSnapshot(rawValue) {
             recurringRules: [],
             detachedAppointments: [],
             recurringTaskRules: [],
+            recurringAppointmentDone: {},
             history: [],
             actionStats: null,
           };
@@ -583,12 +586,17 @@ function parseCloudSnapshot(rawValue) {
       recurringRules: [],
       detachedAppointments: [],
       recurringTaskRules: [],
+      recurringAppointmentDone: {},
       history: [],
       actionStats: null,
     };
   }
 
   if (rawValue && typeof rawValue === "object") {
+    const recurringAppointmentDone = rawValue.recurringAppointmentDone && typeof rawValue.recurringAppointmentDone === "object"
+      ? rawValue.recurringAppointmentDone
+      : {};
+    
     return {
       schedule: Array.isArray(rawValue.schedule) ? rawValue.schedule : [],
       recurringRules: Array.isArray(rawValue.recurringRules)
@@ -600,6 +608,7 @@ function parseCloudSnapshot(rawValue) {
       recurringTaskRules: Array.isArray(rawValue.recurringTaskRules)
         ? rawValue.recurringTaskRules
         : [],
+      recurringAppointmentDone,
       history: Array.isArray(rawValue.history) ? rawValue.history : [],
       actionStats: normalizeActionStats(rawValue.actionStats),
     };
@@ -610,6 +619,7 @@ function parseCloudSnapshot(rawValue) {
     recurringRules: [],
     detachedAppointments: [],
     recurringTaskRules: [],
+    recurringAppointmentDone: {},
     history: [],
     actionStats: null,
   };
@@ -667,6 +677,28 @@ function loadDetachedAppointments() {
   }
 }
 
+function loadRecurringAppointmentDone() {
+  const savedRaw = localStorage.getItem(RECURRING_APPOINTMENT_DONE_STORAGE_KEY);
+  if (!savedRaw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(savedRaw);
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch (_error) {
+    return {};
+  }
+}
+
+function saveRecurringAppointmentDone() {
+  localStorage.setItem(
+    RECURRING_APPOINTMENT_DONE_STORAGE_KEY,
+    JSON.stringify(recurringAppointmentDone),
+  );
+  queueCloudSave();
+}
+
 function loadHistory() {
   const savedRaw = localStorage.getItem(HISTORY_STORAGE_KEY);
   if (!savedRaw) {
@@ -714,6 +746,7 @@ function serializeSnapshot() {
     recurringRules,
     detachedAppointments,
     recurringTaskRules,
+    recurringAppointmentDone,
     history,
     actionStats: loadActionStats(),
   });
@@ -1241,6 +1274,7 @@ async function pullFromCloud(silent = false, prefetchedRecord = null) {
       snapshot.detachedAppointments,
     );
     recurringTaskRules = normalizeRecurringTaskRules(snapshot.recurringTaskRules);
+    recurringAppointmentDone = snapshot.recurringAppointmentDone || {};
     syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
     history = mergeScheduleIntoHistory(normalizeHistory(snapshot.history), schedule);
     const mergedActionStats = mergeActionStats(
@@ -1256,6 +1290,10 @@ async function pullFromCloud(silent = false, prefetchedRecord = null) {
     localStorage.setItem(
       RECURRING_TASK_STORAGE_KEY,
       JSON.stringify(recurringTaskRules),
+    );
+    localStorage.setItem(
+      RECURRING_APPOINTMENT_DONE_STORAGE_KEY,
+      JSON.stringify(recurringAppointmentDone),
     );
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
     if (mergedActionStats) {
@@ -1623,14 +1661,18 @@ function getAppointmentsForDay(day) {
 
   const recurringForDay = recurringRules
     .filter((rule) => ruleAppliesToDay(rule, day))
-    .map((rule) => ({
-      id: `recurring-${rule.id}-${day.key}`,
-      text: rule.text,
-      time: rule.time,
-      durationMinutes: rule.durationMinutes,
-      isRecurring: true,
-      done: false,
-    }));
+    .map((rule) => {
+      const appointmentId = `recurring-${rule.id}-${day.key}`;
+      return {
+        id: appointmentId,
+        text: rule.text,
+        time: rule.time,
+        durationMinutes: rule.durationMinutes,
+        isRecurring: true,
+        recurringRuleId: rule.id,
+        done: !!recurringAppointmentDone[appointmentId],
+      };
+    });
 
   const detachedForDay = detachedAppointments
     .filter((appointment) => appointment.date === day.key)
@@ -1852,7 +1894,7 @@ function createAppointmentElement(dayKeyValue, appointment) {
   const topLine = document.createElement("div");
   topLine.className = "appointment-topline";
 
-  if (!appointment.isExternal && !appointment.isRecurring) {
+  if (!appointment.isExternal) {
     const check = document.createElement("input");
     const checkboxId = `appointment-${appointment.id}`;
     check.type = "checkbox";
@@ -1860,6 +1902,17 @@ function createAppointmentElement(dayKeyValue, appointment) {
     check.checked = !!appointment.done;
     check.className = "appointment-checkbox";
     check.addEventListener("change", () => {
+      if (appointment.isRecurring) {
+        recurringAppointmentDone[appointment.id] = check.checked;
+        trackUserAction();
+        saveRecurringAppointmentDone();
+        render();
+        if (check.checked) {
+          launchConfetti();
+        }
+        return;
+      }
+
       if (appointment.isDetached) {
         const target = detachedAppointments.find((a) => a.id === appointment.id);
         if (target) {
@@ -1931,14 +1984,21 @@ function createAppointmentElement(dayKeyValue, appointment) {
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "delete";
   deleteBtn.type = "button";
+  
   if (appointment.isRecurring) {
-    deleteBtn.textContent = "✏️";
-    deleteBtn.title = "Gérez les récurrences dans la page Ajouter";
-    deleteBtn.setAttribute(
-      "aria-label",
-      "Gérer les rendez-vous en récurrence depuis la page Ajouter",
-    );
-    deleteBtn.classList.add("recurring-manage");
+    if (appointment.done) {
+      deleteBtn.textContent = "x";
+      deleteBtn.setAttribute("aria-label", "Retirer le statut effectué");
+      deleteBtn.title = "Retirer le statut effectué (le rendez-vous récurrent réapparaîtra)";
+    } else {
+      deleteBtn.textContent = "✏️";
+      deleteBtn.title = "Gérez les récurrences dans la page Ajouter";
+      deleteBtn.setAttribute(
+        "aria-label",
+        "Gérer les rendez-vous en récurrence depuis la page Ajouter",
+      );
+      deleteBtn.classList.add("recurring-manage");
+    }
   } else {
     deleteBtn.textContent = "x";
     deleteBtn.disabled = !appointment.done;
@@ -1952,9 +2012,17 @@ function createAppointmentElement(dayKeyValue, appointment) {
       ? "Supprimer le rendez-vous"
       : "Terminez le rendez-vous pour pouvoir le supprimer";
   }
+  
   deleteBtn.addEventListener("click", () => {
     if (appointment.isRecurring) {
-      window.location.href = "ajouter.html";
+      if (appointment.done) {
+        delete recurringAppointmentDone[appointment.id];
+        trackUserAction();
+        saveRecurringAppointmentDone();
+        render();
+      } else {
+        window.location.href = "ajouter.html";
+      }
       return;
     }
 
@@ -2350,6 +2418,7 @@ async function initApp() {
   recurringRules = loadRecurringRules();
   recurringTaskRules = loadRecurringTaskRules();
   detachedAppointments = loadDetachedAppointments();
+  recurringAppointmentDone = loadRecurringAppointmentDone();
   syncRecurringTasksIntoSchedule(schedule, recurringTaskRules);
   localStorage.setItem(
     RECURRING_TASK_STORAGE_KEY,
