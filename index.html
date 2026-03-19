@@ -32,15 +32,20 @@
 
       <section class="server-panel" aria-label="Configuration PocketBase">
         <h2>Serveur PocketBase</h2>
-        <form id="server-form" class="server-form">
+        <form id="server-form" class="server-form" action="#" autocomplete="on">
           <label for="pb-url">URL du serveur</label>
           <input
             id="pb-url"
-            name="url"
+            name="pocketbase-server-url"
             type="url"
             placeholder="https://votre-pocketbase.example.com"
             autocomplete="url"
             required
+            data-keepass-field="url"
+            data-lpignore="false"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
           />
           <button type="submit">Enregistrer</button>
         </form>
