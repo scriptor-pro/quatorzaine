@@ -1030,6 +1030,12 @@ body.layout-compact .task-actions {
   font-weight: 700;
 }
 
+.quick-mode[data-mode="task"].active {
+  background: var(--appointment-bg);
+  color: #7d4a00;
+  border-color: #e5c896;
+}
+
 .quick-add-rdv-fields {
   display: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
